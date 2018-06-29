@@ -16,6 +16,7 @@ setup(
     ext_package="backports",
     ext_modules=[Extension("datetime_fromisoformat", [
         os.path.join("backports", "datetime_fromisoformat", "module.c"), 
+        os.path.join("backports", "datetime_fromisoformat", "_datetimemodule.c"),
         os.path.join("backports", "datetime_fromisoformat", "timezone.c")
     ])],
     test_suite='tests',
