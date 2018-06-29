@@ -15,7 +15,8 @@ setup(
     license="MIT",
     ext_package="backports",
     ext_modules=[Extension("datetime_fromisoformat", [
-        "module.c", "timezone.c"
+        os.path.join("backports", "datetime_fromisoformat", "module.c"), 
+        os.path.join("backports", "datetime_fromisoformat", "timezone.c")
     ])],
     test_suite='tests',
     tests_require=[
