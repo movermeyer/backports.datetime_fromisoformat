@@ -1,7 +1,8 @@
 import unittest
+import pytz
 
 from backports.datetime_fromisoformat import fromisoformat
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 
 class TestFromIsoFormat(unittest.TestCase):
@@ -78,9 +79,9 @@ class TestsFromCPython(unittest.TestCase):
 
         separators = [' ', 'T']
 
-        tzinfos = [None, timezone.utc,
-                   timezone(timedelta(hours=-5)),
-                   timezone(timedelta(hours=2))]
+        tzinfos = [None, pytz.utc,
+                   pytz.FixedOffset(-5 * 60),
+                   pytz.FixedOffset(2 * 60)]
 
         dts = [datetime(*date_tuple, *time_tuple, tzinfo=tzi)
                for date_tuple in base_dates
@@ -101,16 +102,18 @@ class TestsFromCPython(unittest.TestCase):
         tzoffsets = [
             timedelta(hours=5), timedelta(hours=2),
             timedelta(hours=6, minutes=27),
-            timedelta(hours=12, minutes=32, seconds=30),
-            # timedelta(hours=2, minutes=4, seconds=9, microseconds=123456) # Our timezone implementation doesn't handle sub-minute offsets.
+
+            # Our timezone implementation doesn't handle sub-minute offsets.
+            # timedelta(hours=12, minutes=32, seconds=30),
+            # timedelta(hours=2, minutes=4, seconds=9, microseconds=123456)
         ]
 
         tzoffsets += [-1 * td for td in tzoffsets]
 
-        tzinfos = [None, timezone.utc,
-                   timezone(timedelta(hours=0))]
+        tzinfos = [None, pytz.utc,
+                   pytz.FixedOffset(0)]
 
-        tzinfos += [timezone(td) for td in tzoffsets]
+        tzinfos += [pytz.FixedOffset(td.total_seconds() / 60) for td in tzoffsets]
 
         for tzi in tzinfos:
             dt = base_dt.replace(tzinfo=tzi)
@@ -152,10 +155,10 @@ class TestsFromCPython(unittest.TestCase):
             (2009, 12, 4, 8, 17, 45, 123456),
             (2009, 12, 4, 8, 17, 45, 0)]
 
-        tzinfos = [None, timezone.utc,
-                   timezone(timedelta(hours=-5)),
-                   timezone(timedelta(hours=2)),
-                   timezone(timedelta(hours=6, minutes=27))]
+        tzinfos = [None, pytz.utc,
+                   pytz.FixedOffset(-5 * 60),
+                   pytz.FixedOffset(2 * 60),
+                   pytz.FixedOffset(6 * 60 + 27)]
 
         timespecs = ['hours', 'minutes', 'seconds',
                      'milliseconds', 'microseconds']
@@ -215,7 +218,7 @@ class TestsFromCPython(unittest.TestCase):
     # def test_fromisoformat_utc(self):
     #     dt_str = '2014-04-19T13:21:13+00:00'
     #     dt = fromisoformat(dt_str)
-    #     self.assertIs(dt.tzinfo, timezone.utc)
+    #     self.assertIs(dt.tzinfo, pytz.utc)
 
 
 if __name__ == '__main__':
