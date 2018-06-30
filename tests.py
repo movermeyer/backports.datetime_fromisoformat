@@ -1,5 +1,6 @@
-import unittest
 import pytz
+import sys
+import unittest
 
 from backports.datetime_fromisoformat import fromisoformat
 from datetime import datetime, timedelta
@@ -49,7 +50,7 @@ class TestsFromCPython(unittest.TestCase):
         ]
 
         for bad_str in bad_strs:
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ValueError, msg="Did not fail on '{0}'".format(bad_str)):
                 fromisoformat(bad_str)
 
     def test_fromisoformat_fails_typeerror(self):
@@ -58,7 +59,7 @@ class TestsFromCPython(unittest.TestCase):
 
         bad_types = [b'2009-03-01', None, io.StringIO('2009-03-01')]
         for bad_type in bad_types:
-            with self.assertRaises(TypeError):
+            with self.assertRaises(TypeError, msg="Did not fail on '{0}'".format(bad_type)):
                 fromisoformat(bad_type)
 
     def test_fromisoformat_datetime(self):
@@ -151,30 +152,30 @@ class TestsFromCPython(unittest.TestCase):
                 self.assertEqual(dt, dt_rt)
 
     def test_fromisoformat_timespecs(self):
-        datetime_bases = [
-            (2009, 12, 4, 8, 17, 45, 123456),
-            (2009, 12, 4, 8, 17, 45, 0)]
+        if sys.version_info >= (3, 6):
+            datetime_bases = [
+                (2009, 12, 4, 8, 17, 45, 123456),
+                (2009, 12, 4, 8, 17, 45, 0)]
 
-        tzinfos = [None, pytz.utc,
-                   pytz.FixedOffset(-5 * 60),
-                   pytz.FixedOffset(2 * 60),
-                   pytz.FixedOffset(6 * 60 + 27)]
+            tzinfos = [None, pytz.utc,
+                       pytz.FixedOffset(-5 * 60),
+                       pytz.FixedOffset(2 * 60),
+                       pytz.FixedOffset(6 * 60 + 27)]
 
-        timespecs = ['hours', 'minutes', 'seconds',
-                     'milliseconds', 'microseconds']
+            timespecs = ['hours', 'minutes', 'seconds', 'milliseconds', 'microseconds']
 
-        for ip, ts in enumerate(timespecs):
-            for tzi in tzinfos:
-                for dt_tuple in datetime_bases:
-                    if ts == 'milliseconds':
-                        new_microseconds = 1000 * (dt_tuple[6] // 1000)
-                        dt_tuple = dt_tuple[0:6] + (new_microseconds,)
+            for ip, ts in enumerate(timespecs):
+                for tzi in tzinfos:
+                    for dt_tuple in datetime_bases:
+                        if ts == 'milliseconds':
+                            new_microseconds = 1000 * (dt_tuple[6] // 1000)
+                            dt_tuple = dt_tuple[0:6] + (new_microseconds,)
 
-                    dt = datetime(*(dt_tuple[0:(4 + ip)]), tzinfo=tzi)
-                    dtstr = dt.isoformat(timespec=ts)
-                    with self.subTest(dtstr=dtstr):
-                        dt_rt = fromisoformat(dtstr)
-                        self.assertEqual(dt, dt_rt)
+                        dt = datetime(*(dt_tuple[0:(4 + ip)]), tzinfo=tzi)
+                        dtstr = dt.isoformat(timespec=ts)
+                        with self.subTest(dtstr=dtstr):
+                            dt_rt = fromisoformat(dtstr)
+                            self.assertEqual(dt, dt_rt)
 
     def test_fromisoformat_fails_datetime(self):
         # Test that fromisoformat() fails on invalid values
