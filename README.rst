@@ -30,9 +30,9 @@ As mentioned, the interface is not worked out yet. However, this is how you use 
 
 .. code:: python
 
->>> from backports.datetime_fromisoformat import fromisoformat
->>> fromisoformat("2014-01-09T21:48:00-05:30")
-datetime.datetime(2014, 1, 9, 21, 48, tzinfo=-05:30)
+  >>> from backports.datetime_fromisoformat import fromisoformat
+  >>> fromisoformat("2014-01-09T21:48:00-05:30")
+  datetime.datetime(2014, 1, 9, 21, 48, tzinfo=-05:30)
 
 
 Explanation
