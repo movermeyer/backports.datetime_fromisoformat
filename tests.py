@@ -84,7 +84,7 @@ class TestsFromCPython(unittest.TestCase):
                    pytz.FixedOffset(-5 * 60),
                    pytz.FixedOffset(2 * 60)]
 
-        dts = [datetime(*date_tuple, *time_tuple, tzinfo=tzi)
+        dts = [datetime(*(date_tuple + time_tuple), tzinfo=tzi)
                for date_tuple in base_dates
                for time_tuple in base_times
                for tzi in tzinfos]
