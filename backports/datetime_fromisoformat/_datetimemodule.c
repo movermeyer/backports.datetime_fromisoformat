@@ -68,6 +68,103 @@
 #include "Python.h"
 #include "timezone.h"
 
+#define PY_VERSION_AT_LEAST_36 \
+    ((PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 6) || PY_MAJOR_VERSION > 3)
+
+#define MINYEAR 1
+#define MAXYEAR 9999
+
+/* ---------------------------------------------------------------------------
+ * General calendrical helper functions
+ */
+
+/* For each month ordinal in 1..12, the number of days in that month,
+ * and the number of days before that month in the same year.  These
+ * are correct for non-leap years only.
+ */
+static const int _days_in_month[] = {
+    0, /* unused; this vector uses 1-based indexing */
+    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+/* year -> 1 if leap year, else 0. */
+static int
+is_leap(int year)
+{
+    /* Cast year to unsigned.  The result is the same either way, but
+     * C can generate faster code for unsigned mod than for signed
+     * mod (especially for % 4 -- a good compiler should just grab
+     * the last 2 bits when the LHS is unsigned).
+     */
+    const unsigned int ayear = (unsigned int)year;
+    return ayear % 4 == 0 && (ayear % 100 != 0 || ayear % 400 == 0);
+}
+
+/* year, month -> number of days in that month in that year */
+static int
+days_in_month(int year, int month)
+{
+    assert(month >= 1);
+    assert(month <= 12);
+    if (month == 2 && is_leap(year))
+        return 29;
+    else
+        return _days_in_month[month];
+}
+
+/* ---------------------------------------------------------------------------
+ * Range checkers.
+ */
+
+/* Check that date arguments are in range.  Return 0 if they are.  If they
+ * aren't, raise ValueError and return -1.
+ */
+static int
+check_date_args(int year, int month, int day)
+{
+    if (year < MINYEAR || year > MAXYEAR) {
+        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
+        return -1;
+    }
+    if (month < 1 || month > 12) {
+        PyErr_SetString(PyExc_ValueError, "month must be in 1..12");
+        return -1;
+    }
+    if (day < 1 || day > days_in_month(year, month)) {
+        PyErr_SetString(PyExc_ValueError, "day is out of range for month");
+        return -1;
+    }
+    return 0;
+}
+
+/* Check that time arguments are in range.  Return 0 if they are.  If they
+ * aren't, raise ValueError and return -1.
+ */
+static int
+check_time_args(int h, int m, int s, int us, int fold)
+{
+    if (h < 0 || h > 23) {
+        PyErr_SetString(PyExc_ValueError, "hour must be in 0..23");
+        return -1;
+    }
+    if (m < 0 || m > 59) {
+        PyErr_SetString(PyExc_ValueError, "minute must be in 0..59");
+        return -1;
+    }
+    if (s < 0 || s > 59) {
+        PyErr_SetString(PyExc_ValueError, "second must be in 0..59");
+        return -1;
+    }
+    if (us < 0 || us > 999999) {
+        PyErr_SetString(PyExc_ValueError, "microsecond must be in 0..999999");
+        return -1;
+    }
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError, "fold must be either 0 or 1");
+        return -1;
+    }
+    return 0;
+}
+
 /* ---------------------------------------------------------------------------
  * String parsing utilities and helper functions
  */
@@ -238,6 +335,25 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     return rv ? -5 : 1;
 }
 
+/* ---------------------------------------------------------------------------
+ * tzinfo helpers.
+ */
+
+/* Ensure that p is None or of a tzinfo subclass.  Return 0 if OK; if not
+ * raise TypeError and return -1.
+ */
+static int
+check_tzinfo_subclass(PyObject *p)
+{
+    if (p == Py_None || PyTZInfo_Check(p))
+        return 0;
+    PyErr_Format(PyExc_TypeError,
+                 "tzinfo argument must be None or of a tzinfo subclass, "
+                 "not type '%s'",
+                 Py_TYPE(p)->tp_name);
+    return -1;
+}
+
 static inline PyObject *
 tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
 {
@@ -307,6 +423,22 @@ datetime_fromisoformat(PyObject *dtstr)
     if (tzinfo == NULL) {
         return NULL;
     }
+
+#if !PY_VERSION_AT_LEAST_36
+    /* Python 3.6+ does this validation as part of datetime's C API
+     * constructor. See
+     * https://github.com/python/cpython/commit/b67f0967386a9c9041166d2bbe0a421bd81e10bc
+     */
+    if (check_date_args(year, month, day) < 0) {
+        return NULL;
+    }
+    if (check_time_args(hour, minute, second, microsecond, 0) < 0) {
+        return NULL;
+    }
+    if (check_tzinfo_subclass(tzinfo) < 0) {
+        return NULL;
+    }
+#endif
 
     PyObject *dt = PyDateTimeAPI->DateTime_FromDateAndTime(
         year, month, day, hour, minute, second, microsecond, tzinfo,
