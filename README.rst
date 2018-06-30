@@ -16,12 +16,12 @@ Current Status
 The interface is still being worked out. Some open questions include:
 
 - What should usage look like?
-    - ex. Should we monkey-patch `datetime` objects?
+    - ex. Should we monkey-patch ``datetime`` objects?
 - What should we do when this package is installed on Python 3.7+?
 
-If you have thoughts on how this ought to be done, come chat with us in `the Issues`
+If you have thoughts on how this ought to be done, come chat with us in `the Issues`_
 
-.. _`the Issues`: (https://github.com/movermeyer/backports.datetime_fromisoformat/issues).
+.. _`the Issues`: https://github.com/movermeyer/backports.datetime_fromisoformat/issues
 
 Quick Start
 -----------
@@ -37,19 +37,19 @@ datetime.datetime(2014, 1, 9, 21, 48, tzinfo=-05:30)
 
 Explanation
 -----------
-In Python 3.7, `datetime.fromisoformat` was added. It is the inverse of `datetime.isoformat`.
+In Python 3.7, `datetime.fromisoformat`_ was added. It is the inverse of `datetime.isoformat`_.
 For those who need to support earlier versions of Python, a backport was needed. 
 
-.. _`datetime.fromisoformat`: (https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisoformat).
+.. _`datetime.fromisoformat`: https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisoformat
 
-.. _`datetime.isoformat`: (https://docs.python.org/3/library/datetime.html#datetime.date.isoformat).
+.. _`datetime.isoformat`: https://docs.python.org/3/library/datetime.html#datetime.date.isoformat
 
 ``backports.datetime_fromisoformat`` is a C implementation of ``fromisoformat`` based on the upstream cPython 3.7 code.
-For timezone objects, it uses the a custom ``timezone`` C implementation (originally from `Pendulum`).
+For timezone objects, it uses the a custom ``timezone`` C implementation (originally from `Pendulum`_).
 
-.. _`Pendulum`: (https://pendulum.eustace.io/).
+.. _`Pendulum`: https://pendulum.eustace.io/
 
 Goal / Project Scope
 --------------------
 
-The purpose of this project is to provide a perfect backport of ``datetime.fromisoformat`` and ``date.fromisoformat`` to earlier versions of Python, while still providing comparable performance.
+The purpose of this project is to provide a perfect backport of ``fromisoformat`` to earlier versions of Python, while still providing comparable performance.
