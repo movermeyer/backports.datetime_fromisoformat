@@ -14,10 +14,10 @@ setup(
     long_description=long_description,
     license="MIT",
     ext_package="backports",
-    ext_modules=[Extension("datetime_fromisoformat", [
-        os.path.join("backports", "datetime_fromisoformat", "module.c"), 
-        os.path.join("backports", "datetime_fromisoformat", "_datetimemodule.c"),
-        os.path.join("backports", "datetime_fromisoformat", "timezone.c")
+    ext_modules=[Extension("_datetime_fromisoformat", [
+        os.path.join("backports", "_datetime_fromisoformat", "module.c"), 
+        os.path.join("backports", "_datetime_fromisoformat", "_datetimemodule.c"),
+        os.path.join("backports", "_datetime_fromisoformat", "timezone.c")
     ])],
     test_suite='tests',
     tests_require=[
