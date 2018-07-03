@@ -1,4 +1,4 @@
-from backports._datetime_fromisoformat import fromisoformat
+from backports._datetime_fromisoformat import date_fromisoformat, datetime_fromisoformat, time_fromisoformat
 
 class MonkeyPatch(object):
     @staticmethod 
@@ -13,12 +13,24 @@ class MonkeyPatch(object):
         _get_dict.restype = c.POINTER(c.py_object)
         _get_dict.argtypes = [c.py_object]
 
-        from datetime import datetime
+        from datetime import date, datetime, time 
 
         try:
             _ = datetime.fromisoformat
         except AttributeError:
             d = _get_dict(datetime)[0]
-            d['fromisoformat'] = fromisoformat
+            d['fromisoformat'] = datetime_fromisoformat
+
+        try:
+            _ = date.fromisoformat
+        except AttributeError:
+            d = _get_dict(date)[0]
+            d['fromisoformat'] = date_fromisoformat
+
+        try:
+            _ = time.fromisoformat
+        except AttributeError:
+            d = _get_dict(time)[0]
+            d['fromisoformat'] = time_fromisoformat
 
         flush_mro_cache()
