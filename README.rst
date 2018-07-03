@@ -17,6 +17,7 @@ Quick Start
 -----------
 
 .. code:: python
+
   >>> from datetime import date, datetime, time
   >>> from backports.datetime_fromisoformat import MonkeyPatch
   >>> MonkeyPatch.patch_fromisoformat()
