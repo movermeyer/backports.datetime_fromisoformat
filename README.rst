@@ -13,27 +13,15 @@ Current Status
 
 ``backports.datetime_fromisoformat`` is under active development, and should be considered pre-alpha.
 
-The interface is still being worked out. Some open questions include:
-
-- What should usage look like?
-    - ex. Should we monkey-patch ``datetime`` objects?
-- What should we do when this package is installed on Python 3.7+?
-
-If you have thoughts on how this ought to be done, come chat with us in `the Issues`_
-
-.. _`the Issues`: https://github.com/movermeyer/backports.datetime_fromisoformat/issues
-
 Quick Start
 -----------
 
-As mentioned, the interface is not worked out yet. However, this is how you use it in its current state:
-
 .. code:: python
 
-  >>> from backports.datetime_fromisoformat import fromisoformat
-  >>> fromisoformat("2014-01-09T21:48:00-05:30")
+  >>> from backports.datetime_fromisoformat import MonkeyPatch
+  >>> MonkeyPatch.patch_fromisoformat()
+  >>> datetime.fromisoformat("2014-01-09T21:48:00-05:30")
   datetime.datetime(2014, 1, 9, 21, 48, tzinfo=-05:30)
-
 
 Explanation
 -----------
@@ -48,6 +36,11 @@ For those who need to support earlier versions of Python, a backport was needed.
 For timezone objects, it uses the a custom ``timezone`` C implementation (originally from `Pendulum`_).
 
 .. _`Pendulum`: https://pendulum.eustace.io/
+
+Usage in Python 3.7+
+--------------------
+
+NOTE: in Python 3.7 and later, `datetime.fromisoformat` exists lives in the stdlib, and installing this package has NO EFFECT.
 
 Goal / Project Scope
 --------------------

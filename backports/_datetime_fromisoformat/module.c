@@ -21,7 +21,7 @@ static PyMethodDef FromISOFormatMethods[] = {
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "datetime_fromisoformat",
+    "_datetime_fromisoformat",
     NULL,
     -1,
     FromISOFormatMethods,
@@ -34,15 +34,15 @@ static struct PyModuleDef moduledef = {
 
 PyMODINIT_FUNC
 #if PY_MAJOR_VERSION >= 3
-PyInit_datetime_fromisoformat(void)
+PyInit__datetime_fromisoformat(void)
 #else
-initdatetime_fromisoformat(void)
+init_datetime_fromisoformat(void)
 #endif
 {
 #if PY_MAJOR_VERSION >= 3
     PyObject *module = PyModule_Create(&moduledef);
 #else
-    (void)Py_InitModule("datetime_fromisoformat", FromISOFormatMethods);
+    (void)Py_InitModule("_datetime_fromisoformat", FromISOFormatMethods);
 #endif
     PyDateTime_IMPORT;
 
