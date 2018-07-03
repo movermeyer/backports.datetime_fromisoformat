@@ -2,7 +2,7 @@ import pytz
 import sys
 import unittest
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 from backports.datetime_fromisoformat import MonkeyPatch
 MonkeyPatch.patch_fromisoformat()
@@ -29,13 +29,15 @@ class TestsFromCPython(unittest.TestCase):
             (2017, 5, 30)
         ]
 
-        for dt_tuple in base_dates:
-            dt = datetime(*dt_tuple)
-            dt_str = dt.isoformat()
-            with self.subTest(dt_str=dt_str):
-                dt_rt = datetime.fromisoformat(dt.isoformat())
+        for date_cls in [datetime, date]:
+            for dt_tuple in base_dates:
+                dt = date_cls(*dt_tuple)
+                dt_str = dt.isoformat()
+                with self.subTest(dt_str=dt_str):
+                    dt_rt = date_cls.fromisoformat(dt.isoformat())
 
-                self.assertEqual(dt, dt_rt)
+                    self.assertEqual(dt, dt_rt)
+                    self.assertIsInstance(dt_rt, date_cls)
 
     def test_fromisoformat_fails(self):
         # Test that fromisoformat() fails on invalid values
@@ -55,6 +57,9 @@ class TestsFromCPython(unittest.TestCase):
             with self.assertRaises(ValueError, msg="Did not fail on '{0}'".format(bad_str)):
                 datetime.fromisoformat(bad_str)
 
+            with self.assertRaises(ValueError, msg="Did not fail on '{0}'".format(bad_str)):
+                date.fromisoformat(bad_str)
+
     def test_fromisoformat_fails_typeerror(self):
         # Test that fromisoformat fails when passed the wrong type
         import io
@@ -63,6 +68,9 @@ class TestsFromCPython(unittest.TestCase):
         for bad_type in bad_types:
             with self.assertRaises(TypeError, msg="Did not fail on '{0}'".format(bad_type)):
                 datetime.fromisoformat(bad_type)
+
+            with self.assertRaises(TypeError, msg="Did not fail on '{0}'".format(bad_type)):
+                date.fromisoformat(bad_type)
 
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
@@ -103,7 +111,8 @@ class TestsFromCPython(unittest.TestCase):
         base_dt = datetime(2014, 12, 30, 12, 30, 45, 217456)
 
         tzoffsets = [
-            timedelta(hours=5), timedelta(hours=2),
+            timedelta(hours=5),
+            timedelta(hours=2),
             timedelta(hours=6, minutes=27),
 
             # Our timezone implementation doesn't handle sub-minute offsets.
@@ -223,6 +232,12 @@ class TestsFromCPython(unittest.TestCase):
     #     dt = datetime.fromisoformat(dt_str)
     #     self.assertIs(dt.tzinfo, pytz.utc)
 
+    def test_time_fromisoformat(self):
+        tsc = time(12, 14, 45, 203745, tzinfo=pytz.utc)
+        tsc_rt = time.fromisoformat(tsc.isoformat())
+
+        self.assertEqual(tsc, tsc_rt)
+        self.assertIsInstance(tsc_rt, time)
 
 if __name__ == '__main__':
     unittest.main()
