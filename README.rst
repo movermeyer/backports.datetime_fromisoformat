@@ -16,6 +16,14 @@ Current Status
 Quick Start
 -----------
 
+**Installation:**
+
+.. code:: bash
+
+  pip install backports-datetime-fromisoformat
+
+**Usage:**
+
 .. code:: python
 
   >>> from datetime import date, datetime, time
