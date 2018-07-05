@@ -13,6 +13,9 @@ setup(
     description="Backport of Python 3.7's datetime.fromisoformat",
     long_description=long_description,
     license="MIT",
+    author="Michael Overmeyer",
+    author_email="backports@movermeyer.com",
+    url="https://github.com/movermeyer/backports.datetime_fromisoformat",
     ext_package="backports",
     ext_modules=[Extension("_datetime_fromisoformat", [
         os.path.join("backports", "_datetime_fromisoformat", "module.c"), 

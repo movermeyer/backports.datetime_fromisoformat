@@ -42,7 +42,7 @@ For those who need to support earlier versions of Python, a backport of these me
 .. _`datetime.isoformat`: https://docs.python.org/3/library/datetime.html#datetime.date.isoformat
 
 ``backports.datetime_fromisoformat`` is a C implementation of ``fromisoformat`` based on the upstream cPython 3.7 code.
-For timezone objects, it uses the a custom ``timezone`` C implementation (originally from `Pendulum`_).
+For timezone objects, it uses a custom ``timezone`` C implementation (originally from `Pendulum`_).
 
 .. _`Pendulum`: https://pendulum.eustace.io/
 
