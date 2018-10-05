@@ -7,9 +7,11 @@ from io import open
 with open('README.rst', encoding='utf-8') as file:
     long_description = file.read()
 
+VERSION = "0.0.2"
+    
 setup(
     name="backports-datetime-fromisoformat",
-    version="0.0.1",
+    version=VERSION,
     description="Backport of Python 3.7's datetime.fromisoformat",
     long_description=long_description,
     license="MIT",
