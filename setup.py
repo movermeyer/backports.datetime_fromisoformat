@@ -16,12 +16,15 @@ setup(
     author="Michael Overmeyer",
     author_email="backports@movermeyer.com",
     url="https://github.com/movermeyer/backports.datetime_fromisoformat",
-    ext_package="backports",
-    ext_modules=[Extension("_datetime_fromisoformat", [
-        os.path.join("backports", "_datetime_fromisoformat", "module.c"), 
-        os.path.join("backports", "_datetime_fromisoformat", "_datetimemodule.c"),
-        os.path.join("backports", "_datetime_fromisoformat", "timezone.c")
+
+    packages=["backports", "backports.datetime_fromisoformat"],
+
+    ext_modules=[Extension("backports._datetime_fromisoformat", [
+        os.path.join("backports", "datetime_fromisoformat", "module.c"),
+        os.path.join("backports", "datetime_fromisoformat", "_datetimemodule.c"),
+        os.path.join("backports", "datetime_fromisoformat", "timezone.c")
     ])],
+
     test_suite='tests',
     tests_require=[
         'pytz'
