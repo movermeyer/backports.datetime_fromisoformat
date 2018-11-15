@@ -114,6 +114,21 @@ FixedOffset_repr(FixedOffset *self)
 }
 
 /*
+ * def __getinitargs__(self):
+ *     return (self.offset,)
+ */
+static PyObject *
+FixedOffset_getinitargs(FixedOffset *self)
+{
+    PyObject *args = PyTuple_Pack(1, PyLong_FromLong(self->offset));
+
+    if (args == NULL) /* TODO: Test */
+        return NULL;
+
+    return args;
+}
+
+/*
  * Class member / class attributes
  */
 static PyMemberDef FixedOffset_members[] = {
@@ -126,30 +141,32 @@ static PyMethodDef FixedOffset_methods[] = {
     {"utcoffset", (PyCFunction)FixedOffset_utcoffset, METH_VARARGS, ""},
     {"dst", (PyCFunction)FixedOffset_dst, METH_VARARGS, ""},
     {"tzname", (PyCFunction)FixedOffset_tzname, METH_VARARGS, ""},
+    {"__getinitargs__", (PyCFunction)FixedOffset_getinitargs, METH_VARARGS,
+     ""},
     {NULL}};
 
 static PyTypeObject FixedOffset_type = {
-    // TODO: Make static?
-    PyVarObject_HEAD_INIT(NULL, 0) "FixedOffset_type", /* tp_name */
-    sizeof(FixedOffset),                               /* tp_basicsize */
-    0,                                                 /* tp_itemsize */
-    0,                                                 /* tp_dealloc */
-    0,                                                 /* tp_print */
-    0,                                                 /* tp_getattr */
-    0,                                                 /* tp_setattr */
-    0,                                                 /* tp_as_async */
-    (reprfunc)FixedOffset_repr,                        /* tp_repr */
-    0,                                                 /* tp_as_number */
-    0,                                                 /* tp_as_sequence */
-    0,                                                 /* tp_as_mapping */
-    0,                                                 /* tp_hash  */
-    0,                                                 /* tp_call */
-    (reprfunc)FixedOffset_repr,                        /* tp_str */
-    0,                                                 /* tp_getattro */
-    0,                                                 /* tp_setattro */
-    0,                                                 /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,          /* tp_flags */
-    "TZInfo with fixed offset",                        /* tp_doc */
+    PyVarObject_HEAD_INIT(
+        NULL, 0) "backports.datetime_fromisoformat.FixedOffset", /* tp_name */
+    sizeof(FixedOffset),                      /* tp_basicsize */
+    0,                                        /* tp_itemsize */
+    0,                                        /* tp_dealloc */
+    0,                                        /* tp_print */
+    0,                                        /* tp_getattr */
+    0,                                        /* tp_setattr */
+    0,                                        /* tp_as_async */
+    (reprfunc)FixedOffset_repr,               /* tp_repr */
+    0,                                        /* tp_as_number */
+    0,                                        /* tp_as_sequence */
+    0,                                        /* tp_as_mapping */
+    0,                                        /* tp_hash  */
+    0,                                        /* tp_call */
+    (reprfunc)FixedOffset_repr,               /* tp_str */
+    0,                                        /* tp_getattro */
+    0,                                        /* tp_setattro */
+    0,                                        /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    "TZInfo with fixed offset",               /* tp_doc */
 };
 
 /*
@@ -179,7 +196,7 @@ new_fixed_offset(int offset)
 /* ------------------------------------------------------------- */
 
 int
-initialize_timezone_code(void)
+initialize_timezone_code(PyObject *module)
 {
     int ready_result = 0;
     PyDateTime_IMPORT;
@@ -190,6 +207,9 @@ initialize_timezone_code(void)
     FixedOffset_type.tp_init = (initproc)FixedOffset_init;
 
     ready_result = PyType_Ready(&FixedOffset_type);
+
+    Py_INCREF(&FixedOffset_type);
+    PyModule_AddObject(module, "FixedOffset", (PyObject *)&FixedOffset_type);
 
     return ready_result;
 }

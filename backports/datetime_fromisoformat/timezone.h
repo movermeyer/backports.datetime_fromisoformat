@@ -7,6 +7,6 @@ PyObject *
 new_fixed_offset(int offset);
 
 int
-initialize_timezone_code(void);
+initialize_timezone_code(PyObject *module);
 
 #endif
