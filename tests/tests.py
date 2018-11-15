@@ -1,3 +1,5 @@
+import copy
+import pickle
 import pytz
 import sys
 import unittest
@@ -238,6 +240,23 @@ class TestsFromCPython(unittest.TestCase):
 
         self.assertEqual(tsc, tsc_rt)
         self.assertIsInstance(tsc_rt, time)
+
+
+class TestCopy(unittest.TestCase):
+    def test_basic_pickle_and_copy(self):
+        dt = datetime.fromisoformat('2018-11-01 20:42:09.058000')
+        dt2 = pickle.loads(pickle.dumps(dt))
+        self.assertEqual(dt, dt2)
+        dt3 = copy.deepcopy(dt)
+        self.assertEqual(dt, dt3)
+
+        # FixedOffset
+        dt = datetime.fromisoformat('2018-11-01 20:42:09.058000+00:00')
+        dt2 = pickle.loads(pickle.dumps(dt))
+        self.assertEqual(dt, dt2)
+        dt3 = copy.deepcopy(dt)
+        self.assertEqual(dt, dt3)
+
 
 if __name__ == '__main__':
     unittest.main()

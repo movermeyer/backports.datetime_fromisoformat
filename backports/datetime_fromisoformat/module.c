@@ -69,10 +69,10 @@ init_datetime_fromisoformat(void)
     PyDateTime_IMPORT;
 
 #if PY_MAJOR_VERSION >= 3
-    if (initialize_timezone_code() < 0)
+    if (initialize_timezone_code(module) < 0)
         return NULL;
 #else
-    initialize_timezone_code();
+    initialize_timezone_code(module);
 #endif
 
     initialize_datetime_code();

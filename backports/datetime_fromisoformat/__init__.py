@@ -1,7 +1,7 @@
 import os
 import sys
 
-from backports._datetime_fromisoformat import date_fromisoformat, datetime_fromisoformat, time_fromisoformat
+from backports._datetime_fromisoformat import date_fromisoformat, datetime_fromisoformat, time_fromisoformat, FixedOffset
 
 class MonkeyPatch(object):
     @staticmethod 
