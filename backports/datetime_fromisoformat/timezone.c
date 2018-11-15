@@ -114,6 +114,21 @@ FixedOffset_repr(FixedOffset *self)
 }
 
 /*
+ * def __getinitargs__(self):
+ *     return (self.offset,)
+ */
+static PyObject *
+FixedOffset_getinitargs(FixedOffset *self)
+{
+    PyObject *args = PyTuple_Pack(1, PyLong_FromLong(self->offset));
+
+    if (args == NULL) /* TODO: Test */
+        return NULL;
+
+    return args;
+}
+
+/*
  * Class member / class attributes
  */
 static PyMemberDef FixedOffset_members[] = {
@@ -126,6 +141,8 @@ static PyMethodDef FixedOffset_methods[] = {
     {"utcoffset", (PyCFunction)FixedOffset_utcoffset, METH_VARARGS, ""},
     {"dst", (PyCFunction)FixedOffset_dst, METH_VARARGS, ""},
     {"tzname", (PyCFunction)FixedOffset_tzname, METH_VARARGS, ""},
+    {"__getinitargs__", (PyCFunction)FixedOffset_getinitargs, METH_VARARGS,
+     ""},
     {NULL}};
 
 static PyTypeObject FixedOffset_type = {
