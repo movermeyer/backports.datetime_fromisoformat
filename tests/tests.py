@@ -251,7 +251,7 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(dt, dt3)
 
         # FixedOffset
-        dt = datetime.fromisoformat('2018-11-01 20:42:09.058000+00:00')
+        dt = datetime.fromisoformat('2018-11-01 20:42:09.058000+01:30')
         dt2 = pickle.loads(pickle.dumps(dt))
         self.assertEqual(dt, dt2)
         dt3 = copy.deepcopy(dt)
