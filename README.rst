@@ -2,8 +2,8 @@
 backports.datetime_fromisoformat
 ================================
 
-.. image:: https://circleci.com/gh/movermeyer/backports.datetime_fromisoformat.svg?style=svg
-    :target: https://circleci.com/gh/movermeyer/backports.datetime_fromisoformat
+.. image:: https://github.com/movermeyer/backports.datetime_fromisoformat/workflows/Tests/badge.svg
+    :target: https://github.com/movermeyer/backports.datetime_fromisoformat/workflows/Tests
 
 A backport of Python 3.7's ``datetime.fromisoformat`` methods to earlier versions of Python 3. 
 Tested against Python 3.4, 3.5 and 3.6.
