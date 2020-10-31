@@ -11,7 +11,7 @@ Tested against Python 3.4, 3.5 and 3.6.
 Current Status
 --------------
 
-``backports.datetime_fromisoformat`` is under active development, and should be considered pre-alpha.
+Development of ``backports.datetime_fromisoformat`` is "complete". Outside of potential minor bug fixes, do not expect new development here.
 
 Quick Start
 -----------
