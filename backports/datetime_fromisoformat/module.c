@@ -5,37 +5,37 @@
 #include "timezone.h"
 
 static PyObject *
-fromisoformat_date(PyObject *self, PyObject *args)
+fromisoformat_date(PyObject *self, PyObject *dtstr)
 {
     PyObject *obj;
-    obj = date_fromisoformat(PyTuple_GetItem(args, 0));
+    obj = date_fromisoformat(dtstr);
     return obj;
 }
 
 static PyObject *
-fromisoformat_time(PyObject *self, PyObject *args)
+fromisoformat_time(PyObject *self, PyObject *dtstr)
 {
     PyObject *obj;
-    obj = time_fromisoformat(PyTuple_GetItem(args, 0));
+    obj = time_fromisoformat(dtstr);
     return obj;
 }
 
 static PyObject *
-fromisoformat_datetime(PyObject *self, PyObject *args)
+fromisoformat_datetime(PyObject *self, PyObject *dtstr)
 {
     PyObject *obj;
-    obj = datetime_fromisoformat(PyTuple_GetItem(args, 0));
+    obj = datetime_fromisoformat(dtstr);
     return obj;
 }
 
 static PyMethodDef FromISOFormatMethods[] = {
-    {"date_fromisoformat", fromisoformat_date, METH_VARARGS,
+    {"date_fromisoformat", fromisoformat_date, METH_O,
      "Return a date corresponding to a date_string in one of the formats "
      "emitted by date.isoformat()"},
-    {"time_fromisoformat", fromisoformat_time, METH_VARARGS,
+    {"time_fromisoformat", fromisoformat_time, METH_O,
      "Return a time corresponding to a date_string in one of the formats "
      "emitted by time.isoformat()"},
-    {"datetime_fromisoformat", fromisoformat_datetime, METH_VARARGS,
+    {"datetime_fromisoformat", fromisoformat_datetime, METH_O,
      "Return a datetime corresponding to a date_string in one of the formats "
      "emitted by datetime.isoformat()"},
     {NULL, NULL, 0, NULL}};
