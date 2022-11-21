@@ -1,18 +1,18 @@
 import os
 
 from setuptools import setup, Extension
-# workaround for open() with encoding='' python2/3 compability
+# workaround for open() with encoding='' python2/3 compatibility
 from io import open
 
 with open('README.rst', encoding='utf-8') as file:
     long_description = file.read()
 
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 
 setup(
     name="backports-datetime-fromisoformat",
     version=VERSION,
-    description="Backport of Python 3.7's datetime.fromisoformat",
+    description="Backport of Python 3.11's datetime.fromisoformat",
     long_description=long_description,
     license="MIT",
     author="Michael Overmeyer",
@@ -40,6 +40,10 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ]
 )
