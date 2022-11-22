@@ -27,22 +27,14 @@ class MonkeyPatch(object):
 
         from datetime import date, datetime, time
 
-        try:
-            _ = datetime.fromisoformat
-        except AttributeError:
+        if sys.version_info.major >= 3 and sys.version_info < (3, 11):
             d = _get_dict(datetime)[0]
             d['fromisoformat'] = datetime_fromisoformat
 
-        try:
-            _ = date.fromisoformat
-        except AttributeError:
             d = _get_dict(date)[0]
             d['fromisoformat'] = date_fromisoformat
 
-        try:
-            _ = time.fromisoformat
-        except AttributeError:
             d = _get_dict(time)[0]
             d['fromisoformat'] = time_fromisoformat
 
-        flush_mro_cache()
+            flush_mro_cache()
