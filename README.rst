@@ -13,6 +13,19 @@ Current Status
 
 Development of ``backports.datetime_fromisoformat`` is "complete". Outside of potential minor bug fixes, do not expect new development here.
 
+Version 2 changes
+-----------------
+
+In version 1, ``backports.datetime_fromisoformat`` was a backport of the Python 3.7 version of the ``fromisoformat`` methods.
+This meant that it was limited in being able to parse only timestamps that were in the format produced by ``datetime.isoformat``.
+
+As of version 2, ``backports.datetime_fromisoformat`` is a backport of the Python 3.11 version of the ``fromisoformat`` methods, which can parse (almost) the entire ISO 8601 specification.
+There are no changes required when upgrading from v1 to v2. The parser is simply able to parse a wider portion of the ISO 8601 specification.
+
+However, starting in version 2, ``backports.datetime_fromisoformat`` will apply its changes to Python < 3.11, whereas v1 only applied changes to Python < 3.7.
+If you happened to be using ``backports.datetime_fromisoformat`` v1 on Python 3.7 through Python 3.10 and then upgrade to v2, it will patch the ``fromisoformat`` methods, whereas in v1 it did not.
+The result is that the ``fromisoformat`` methods will suddenly be able to parse timestamps from a wider portion of the ISO 8601 specification.
+
 Quick Start
 -----------
 
