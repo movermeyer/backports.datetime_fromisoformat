@@ -25,7 +25,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run tests
-        run: python setup.py test
+        run: STRICT_WARNINGS=1 python setup.py test
 
   build-old:
     runs-on: ubuntu-18.04
@@ -47,4 +47,4 @@ jobs:
       - run: pip install pytz
 
       - name: Run tests
-        run: python setup.py test
+        run: STRICT_WARNINGS=1 python setup.py test
