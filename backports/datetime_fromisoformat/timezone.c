@@ -1,6 +1,6 @@
 /* This code was originally copied from Pendulum
 (https://github.com/sdispater/pendulum/blob/13ff4a0250177f77e4ff2e7bd1f442d954e66b22/pendulum/parsing/_iso8601.c#L176)
-Pendulum (like ciso8601) is MIT licensed, so we have included a copy of its
+Pendulum (like backports.datetime_fromisoformat) is MIT licensed, so we have included a copy of its
 license here.
 */
 
@@ -27,26 +27,29 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include "timezone.h"
+
 #include <Python.h>
 #include <datetime.h>
 #include <structmember.h>
 
-#include "timezone.h"
-
 #define SECS_PER_MIN 60
 #define SECS_PER_HOUR (60 * SECS_PER_MIN)
+#define TWENTY_FOUR_HOURS_IN_SECONDS 86400
+
+#define PY_VERSION_AT_LEAST_36 \
+    ((PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 6) || PY_MAJOR_VERSION > 3)
 
 /*
  * class FixedOffset(tzinfo):
  */
 typedef struct {
+    // Seconds offset from UTC.
+    // Must be in range (-86400, 86400) seconds exclusive.
+    // ie. (-1440, 1440) minutes exclusive.
     PyObject_HEAD int offset;
 } FixedOffset;
 
-/*
- * def __init__(self, offset):
- *     self.offset = offset
- */
 static int
 FixedOffset_init(FixedOffset *self, PyObject *args, PyObject *kwargs)
 {
@@ -54,77 +57,91 @@ FixedOffset_init(FixedOffset *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTuple(args, "i", &offset))
         return -1;
 
+    if (abs(offset) >= TWENTY_FOUR_HOURS_IN_SECONDS) {
+        PyErr_Format(PyExc_ValueError,
+                     "offset must be an integer in the range (-86400, 86400), "
+                     "exclusive");
+        return -1;
+    }
+
     self->offset = offset;
     return 0;
 }
 
-/*
- * def utcoffset(self, dt):
- *     return timedelta(seconds=self.offset * 60)
- */
 static PyObject *
-FixedOffset_utcoffset(FixedOffset *self, PyObject *args)
+FixedOffset_utcoffset(FixedOffset *self, PyObject *dt)
 {
     return PyDelta_FromDSU(0, self->offset, 0);
 }
 
-/*
- * def dst(self, dt):
- *     return timedelta(seconds=self.offset * 60)
- */
 static PyObject *
-FixedOffset_dst(FixedOffset *self, PyObject *args)
+FixedOffset_dst(FixedOffset *self, PyObject *dt)
 {
-    return PyDelta_FromDSU(0, self->offset, 0);
+    Py_RETURN_NONE;
 }
 
-/*
- * def tzname(self, dt):
- *     sign = '+'
- *     if self.offset < 0:
- *         sign = '-'
- *     return "%s%d:%d" % (sign, self.offset / 60, self.offset % 60)
- */
 static PyObject *
-FixedOffset_tzname(FixedOffset *self, PyObject *args)
+FixedOffset_fromutc(FixedOffset *self, PyDateTime_DateTime *dt)
 {
-    char result_tzname[7] = {0};
-    char sign = '+';
-    int offset = self->offset;
-
-    if (offset < 0) {
-        sign = '-';
-        offset *= -1;
+    if (!PyDateTime_Check(dt)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "fromutc: argument must be a datetime");
+        return NULL;
+    }
+    if (!dt->hastzinfo || dt->tzinfo != (PyObject *)self) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fromutc: dt.tzinfo "
+                        "is not self");
+        return NULL;
     }
 
-    sprintf(result_tzname, "%c%02d:%02d", sign, offset / SECS_PER_HOUR,
-            offset / SECS_PER_MIN % SECS_PER_MIN);
-
-    return PyUnicode_FromString(result_tzname);
+    return PyNumber_Add((PyObject *)dt,
+                        FixedOffset_utcoffset(self, (PyObject *)self));
 }
 
-/*
- * def __repr__(self):
- *     return self.tzname()
- */
+static PyObject *
+FixedOffset_tzname(FixedOffset *self, PyObject *dt)
+{
+    int offset = self->offset;
+
+    if (offset == 0) {
+#if PY_VERSION_AT_LEAST_36
+        return PyUnicode_FromString("UTC");
+#elif PY_MAJOR_VERSION >= 3
+        return PyUnicode_FromString("UTC+00:00");
+#else
+        return PyString_FromString("UTC+00:00");
+#endif
+    }
+    else {
+        char result_tzname[10] = {0};
+        char sign = '+';
+
+        if (offset < 0) {
+            sign = '-';
+            offset *= -1;
+        }
+        snprintf(result_tzname, 10, "UTC%c%02u:%02u", sign,
+                 (offset / SECS_PER_HOUR) & 31,
+                 offset / SECS_PER_MIN % SECS_PER_MIN);
+#if PY_MAJOR_VERSION >= 3
+        return PyUnicode_FromString(result_tzname);
+#else
+        return PyString_FromString(result_tzname);
+#endif
+    }
+}
+
 static PyObject *
 FixedOffset_repr(FixedOffset *self)
 {
     return FixedOffset_tzname(self, NULL);
 }
 
-/*
- * def __getinitargs__(self):
- *     return (self.offset,)
- */
 static PyObject *
 FixedOffset_getinitargs(FixedOffset *self)
 {
     PyObject *args = PyTuple_Pack(1, PyLong_FromLong(self->offset));
-
-    if (args == NULL) /* TODO: Test */
-        return NULL;
-
     return args;
 }
 
@@ -138,16 +155,24 @@ static PyMemberDef FixedOffset_members[] = {
  * Class methods
  */
 static PyMethodDef FixedOffset_methods[] = {
-    {"utcoffset", (PyCFunction)FixedOffset_utcoffset, METH_VARARGS, ""},
-    {"dst", (PyCFunction)FixedOffset_dst, METH_VARARGS, ""},
-    {"tzname", (PyCFunction)FixedOffset_tzname, METH_VARARGS, ""},
-    {"__getinitargs__", (PyCFunction)FixedOffset_getinitargs, METH_VARARGS,
-     ""},
+    {"utcoffset", (PyCFunction)FixedOffset_utcoffset, METH_O,
+     PyDoc_STR("Return fixed offset.")},
+
+    {"dst", (PyCFunction)FixedOffset_dst, METH_O, PyDoc_STR("Return None.")},
+
+    {"fromutc", (PyCFunction)FixedOffset_fromutc, METH_O,
+     PyDoc_STR("datetime in UTC -> datetime in local time.")},
+
+    {"tzname", (PyCFunction)FixedOffset_tzname, METH_O,
+     PyDoc_STR("Returns offset as 'UTC(+|-)HH:MM'")},
+
+    {"__getinitargs__", (PyCFunction)FixedOffset_getinitargs, METH_NOARGS,
+     PyDoc_STR("pickle support")},
+
     {NULL}};
 
 static PyTypeObject FixedOffset_type = {
-    PyVarObject_HEAD_INIT(
-        NULL, 0) "backports.datetime_fromisoformat.FixedOffset", /* tp_name */
+    PyVarObject_HEAD_INIT(NULL, 0) "backports.datetime_fromisoformat.FixedOffset", /* tp_name */
     sizeof(FixedOffset),                      /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
@@ -174,7 +199,8 @@ static PyTypeObject FixedOffset_type = {
  * Skip overhead of calling PyObject_New and PyObject_Init.
  * Directly allocate object.
  * Note that this also doesn't do any validation of the offset parameter.
- * Callers must ensure that offset is within the range (-1440,1440), exclusive.
+ * Callers must ensure that offset is within \
+ * the range (-86400, 86400), exclusive.
  */
 PyObject *
 new_fixed_offset_ex(int offset, PyTypeObject *type)
@@ -198,7 +224,6 @@ new_fixed_offset(int offset)
 int
 initialize_timezone_code(PyObject *module)
 {
-    int ready_result = 0;
     PyDateTime_IMPORT;
     FixedOffset_type.tp_new = PyType_GenericNew;
     FixedOffset_type.tp_base = PyDateTimeAPI->TZInfoType;
@@ -206,10 +231,16 @@ initialize_timezone_code(PyObject *module)
     FixedOffset_type.tp_members = FixedOffset_members;
     FixedOffset_type.tp_init = (initproc)FixedOffset_init;
 
-    ready_result = PyType_Ready(&FixedOffset_type);
+    if (PyType_Ready(&FixedOffset_type) < 0)
+        return -1;
 
     Py_INCREF(&FixedOffset_type);
-    PyModule_AddObject(module, "FixedOffset", (PyObject *)&FixedOffset_type);
+    if (PyModule_AddObject(module, "FixedOffset",
+                           (PyObject *)&FixedOffset_type) < 0) {
+        Py_DECREF(module);
+        Py_DECREF(&FixedOffset_type);
+        return -1;
+    }
 
-    return ready_result;
+    return 0;
 }
