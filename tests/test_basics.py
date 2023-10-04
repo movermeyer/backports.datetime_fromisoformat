@@ -626,6 +626,5 @@ class TestCopy(unittest.TestCase):
         dt3 = copy.deepcopy(dt)
         self.assertEqual(dt, dt3)
 
-
 if __name__ == '__main__':
     unittest.main()
