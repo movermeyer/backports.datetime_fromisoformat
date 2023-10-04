@@ -40,7 +40,6 @@ static PyMethodDef FromISOFormatMethods[] = {
      "emitted by datetime.isoformat()"},
     {NULL, NULL, 0, NULL}};
 
-#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_datetime_fromisoformat",
@@ -52,32 +51,16 @@ static struct PyModuleDef moduledef = {
     NULL,
     NULL,
 };
-#endif
 
 PyMODINIT_FUNC
-#if PY_MAJOR_VERSION >= 3
 PyInit__datetime_fromisoformat(void)
-#else
-init_datetime_fromisoformat(void)
-#endif
 {
-#if PY_MAJOR_VERSION >= 3
     PyObject *module = PyModule_Create(&moduledef);
-#else
-    (void)Py_InitModule("_datetime_fromisoformat", FromISOFormatMethods);
-#endif
     PyDateTime_IMPORT;
 
-#if PY_MAJOR_VERSION >= 3
     if (initialize_timezone_code(module) < 0)
         return NULL;
-#else
-    initialize_timezone_code(module);
-#endif
 
     initialize_datetime_code();
-
-#if PY_MAJOR_VERSION >= 3
     return module;
-#endif
 }
