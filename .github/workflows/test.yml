@@ -50,25 +50,3 @@ jobs:
 
       - name: Run tests
         run: tox --skip-missing-interpreters=true
-
-
-  build-even-older:
-    runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        python-version: ["3.4", "3.5"]
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      # tox doesn't support these versions of Python anymore
-      - name: Install tox
-        run: pip install 'tox < 4'
-
-      - name: Run tests
-        run: tox --skip-missing-interpreters=true

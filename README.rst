@@ -6,7 +6,7 @@ backports.datetime_fromisoformat
     :target: https://github.com/movermeyer/backports.datetime_fromisoformat/actions/workflows/test.yml
 
 A backport of Python 3.11's ``datetime.fromisoformat`` methods to earlier versions of Python 3.
-Tested against Python 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10 and 3.11
+Tested against Python 3.6, 3.7, 3.8, 3.9, 3.10 and 3.11
 
 Current Status
 --------------
