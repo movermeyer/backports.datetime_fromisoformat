@@ -149,7 +149,7 @@ jobs:
         run: foreach($line in [System.IO.File]::ReadLines("release_values.txt")){ echo $line >> $env:GITHUB_ENV }
 
       - name: Replace version in pyproject.toml (developmental releases)
-        run: (Get-Content -path "pyproject.toml") | % { $_ -Replace '^version = ".*?"$', 'version = "$env:version_to_use"' } |  Out-File "pyproject.toml"
+        run: (Get-Content -path "pyproject.toml") | % { $_ -Replace '^version = ".*?"$', "version = `"$env:version_to_use`"" } |  Out-File "pyproject.toml"
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.2
