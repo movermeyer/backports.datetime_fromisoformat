@@ -146,8 +146,7 @@ jobs:
           name: release_values
 
       - name: Load normalized release values
-        run: |
-          for /F "tokens=*" %%A in (release_values.txt) do echo %%A >> $env:GITHUB_ENV
+        run: foreach($line in [System.IO.File]::ReadLines("release_values.txt")){ echo $line >> $env:GITHUB_ENV }
 
       - name: Replace version in pyproject.toml (developmental releases)
         run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
