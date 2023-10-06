@@ -4,34 +4,261 @@ on:
   release:
     types: [released]
   workflow_dispatch:
+    inputs:
+      requested_release_tag:
+        description: 'The tag to use for this developmental release (without `.dev` suffix) (e.g., `v2.0.1`)'
+        required: true
 
 jobs:
-  publish:
+  # Responsible for validating inputs and generating release values for the rest of the workflow
+  # Takes in the tag from the GitHub release, or a manually provided one for developmental releases (i.e., tests of the CI pipeline)
+  pre_build_sanity_check:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v4
+        name: Install Python
+        with:
+          python-version: '3.12'
+
+      - run: |
+          pip install packaging
+
+      - name: Capture the release tag
+        run: |
+          echo "release_tag=`echo '${{ github.event.release.tag_name }}${{ github.event.inputs.requested_release_tag }}'`" >> $GITHUB_ENV
+
+      - name: Normalize the release tag into a version
+        run: |
+          echo "version_from_release_tag=`echo '${{ env.release_tag }}' | sed 's/^v//'`" >> $GITHUB_ENV
+
+      - name: Log all the things
+        run: |
+          echo 'release event's tag      `${{ env.release_tag }}`'
+          echo 'release event's version  `${{ env.version_from_release_tag }}`'
+
+      - name: Verify that the release's tag matches the format we expect ("v" + Python version number)
+        # https://peps.python.org/pep-0440/
+        run: |
+          echo "${{ env.release_tag }}" | sed '/^v\([1-9][0-9]*!\)\?\(0\|[1-9][0-9]*\)\(\.\(0\|[1-9][0-9]*\)\)*\(\(a\|b\|rc\)\(0\|[1-9][0-9]*\)\)\?\(\.post\(0\|[1-9][0-9]*\)\)\?\(\.dev\(0\|[1-9][0-9]*\)\)\?$/!{q1}'
+
+      - uses: actions/checkout@v4
+        # with: # TODO: Releases aren't necessarily on the default branch
+        #   ref: ${{ env.release_tag }}
+
+      - name: Get the version from pyproject.toml
+        run: |
+          echo "backports_version=`grep -Po 'version = "\K[^"]*' pyproject.toml`" >> $GITHUB_ENV
+
+      - name: Log all the things
+        run: |
+          echo 'version in pyproject.toml `${{ env.backports_version }}`'
+
+      - name: Verify that the release version matches the version in pyproject.toml
+        run: |
+          [[ ${{ env.version_from_release_tag }} == ${{ env.backports_version }} ]]
+
+      - name: Get the latest version from Test PyPI
+        # TODO: New releases aren't necessarily for the latest code. Change this to get the most recent developmental version for a release instead
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; contents=sys.stdin.read(); parsed = json.loads(contents); print("test_pypi_version=" + parsed["info"]["version"])' >> $GITHUB_ENV
+
+      - name: Generate the developmental release version
+        if: github.event_name == 'workflow_dispatch'
+        # If there is a developmental release in Test PyPI for the version in pyproject.toml, increment the number. Else 1. Save in $GITHUB_ENV
+        run: |
+          python -c 'from packaging import version; new = version.parse("${{ env.version_from_release_tag }}"); existing = version.parse("${{ env.test_pypi_version }}"); dev_number = existing.dev + 1 if existing.is_devrelease and new.release == existing.release else 1; epoch = f"{new.epoch}!" if new.epoch else ""; release = ".".join([str(x) for x in new.release]); pre = f"{new.pre[0]}{new.pre[1]}" if new.pre else ""; post = f".post{new.post}" if new.post else ""; dev = f".dev{dev_number}"; developmental_release_version=f"{epoch}{release}{pre}{post}{dev}"; print(f"developmental_release_version={developmental_release_version}")' >> $GITHUB_ENV
+
+      - name: Determine which version to use
+        run: echo "version_to_use=`if [ '${{ github.event_name }}' == 'workflow_dispatch' ]; then echo '${{ env.developmental_release_version }}'; else echo '${{ env.version_from_release_tag }}'; fi`" >> $GITHUB_ENV
+
+      - name: Log all the things
+        run: |
+          echo 'release event's tag                                   `${{ env.release_tag }}`'
+          echo 'release event's version                               `${{ env.version_from_release_tag }}`'
+          echo 'Version in pyproject.toml                             `${{ env.backports_version }}`'
+          echo 'Version in Test PyPI                                  `${{ env.test_pypi_version }}`'
+          echo 'New developmental version                             `${{ env.developmental_release_version }}`'
+          echo 'Version to use                                        `${{ env.version_to_use }}`'
+
+      - name: Verify that the version string we produced looks like a Python version string
+        # https://peps.python.org/pep-0440/
+        run: |
+          echo "${{ env.version_to_use }}" | sed '/^\([1-9][0-9]*!\)\?\(0\|[1-9][0-9]*\)\(\.\(0\|[1-9][0-9]*\)\)*\(\(a\|b\|rc\)\(0\|[1-9][0-9]*\)\)\?\(\.post\(0\|[1-9][0-9]*\)\)\?\(\.dev\(0\|[1-9][0-9]*\)\)\?$/!{q1}'
+
+      - name: Serialize normalized release values
+        run: |
+          echo -e "version_to_use=${{ env.version_to_use }}" > release_values.txt
+
+      - name: Share normalized release values
+        uses: actions/upload-artifact@v3
+        with:
+          name: release_values
+          path: release_values.txt
+
+  build_wheels:
+    name: Build wheel on ${{ matrix.os }}
+    needs: [pre_build_sanity_check]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
+        # with: # TODO: Releases aren't necessarily on the default branch
+        #   ref: ${{ env.release_tag }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/download-artifact@v3
         with:
-          python-version: 3.12
+          name: release_values
 
-      - name: Run tests
-        run: python setup.py test
+      - name: Load normalized release values
+        run: |
+          xargs -a release_values.txt -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
 
-      - name: Build source dist
+      - name: Replace version in pyproject.toml (developmental releases)
+        run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.2
+        env:
+          CIBW_SKIP: "pp*-macosx* *-win32 *-manylinux_i686"
+          CIBW_ARCHS_MACOS: x86_64 arm64 universal2
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    needs: [pre_build_sanity_check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v4
+        name: Install Python
+        with:
+          python-version: '3.12'
+
+      - uses: actions/checkout@v4
+        # with: # TODO: Releases aren't necessarily on the default branch
+        #   ref: ${{ env.release_tag }}
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: release_values
+
+      - name: Load normalized release values
+        run: |
+          xargs -a release_values.txt -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
+
+      - name: Replace version in pyproject.toml (developmental releases)
+        run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
+
+      - name: Build sdist
         run: python setup.py sdist
 
-      - name: Publish package to TestPyPI
-        uses: pypa/gh-action-pypi-publish@v1.8.10
+      - uses: actions/upload-artifact@v3
         with:
-          user: __token__
-          password: ${{ secrets.test_pypi_password }}
-          repository_url: https://test.pypi.org/legacy/
+          path: dist/*.tar.gz
 
-      - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.8.10
+  # publish_to_test_pypi:
+  #   needs: [pre_build_sanity_check, build_wheels, build_sdist]
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     # with: # TODO: Releases aren't necessarily on the default branch
+  #     #   ref: ${{ env.release_tag }}
+
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: 3.12
+
+  #     - name: Publish package to TestPyPI
+  #       uses: pypa/gh-action-pypi-publish@v1.8.10
+  #       with:
+  #         # TODO: Change to use "Trusted publishing"?
+  #         user: __token__
+  #         password: ${{ secrets.test_pypi_password }}
+  #         repository_url: https://test.pypi.org/legacy/
+
+  pre_publish_sanity_check:
+    if: github.event_name == 'release'
+    needs: [pre_build_sanity_check]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v3
         with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
+          name: release_values
+
+      - name: Load normalized release values
+        run: |
+          xargs -a release_values.txt -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
+
+      - name: Get the latest version from Test PyPI
+        # TODO: New releases aren't necessarily for the latest code. Change this to get the most recent developmental version for a release instead
+        run: |
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; contents=sys.stdin.read(); parsed = json.loads(contents); print("test_pypi_version=" + parsed["info"]["version"])' >> $GITHUB_ENV
+
+      - name: Get the latest version from PyPI
+        run: |
+          curl https://pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; contents=sys.stdin.read(); parsed = json.loads(contents); print("pypi_version=" + parsed["info"]["version"])' >> $GITHUB_ENV
+
+      - name: Log all the things
+        run: |
+          echo 'Version in Test PyPI  `${{ env.test_pypi_version }}`'
+          echo 'Version in PyPI       `${{ env.pypi_version }}`'
+
+      - name: Verify that there exists a developmental release for this version in Test PyPI
+        # https://peps.python.org/pep-0440
+        # Meant to make sure that we aren't somehow skipping the "developmental release" phase of the release
+        # (e.g., Publishing the GitHub release without first saving the draft)
+        run: |
+          python -c 'import sys; from packaging import version; code = 0 if version.parse("${{ env.test_pypi_version }}").is_devrelease else 1; sys.exit(code)'
+
+      - name: Verify that the `version_to_use` is not a "developmental release"
+        # https://peps.python.org/pep-0440
+        run: |
+          python -c 'import sys; from packaging import version; code = 1 if version.parse("${{ env.version_to_use }}").is_devrelease else 0; sys.exit(code)'
+
+      - name: Verify that the `version_to_use` is larger/newer than the existing release in PyPI
+        run: |
+          python -c 'import sys; from packaging import version; code = 0 if version.parse("${{ env.pypi_version }}") < version.parse("${{ env.version_to_use }}") else 1; sys.exit(code)'
+
+      - name: Verify that the `version_to_use` is present in the CHANGELOG
+        # TODO: Use something like `changelog-cli` to extract the correct version number
+        run: |
+          grep ${{ env.version_to_use }} CHANGELOG.md
+
+
+  # publish:
+  #   needs: [pre_build_sanity_check, build_wheels, build_sdist, publish_to_test_pypi, pre_publish_sanity_check]
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: 3.12
+
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: my-artifact
+
+  #     - name: Publish package to TestPyPI
+  #       uses: pypa/gh-action-pypi-publish@v1.8.10
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.test_pypi_password }}
+  #         repository_url: https://test.pypi.org/legacy/
+
+  #     - name: Publish package to PyPI
+  #       uses: pypa/gh-action-pypi-publish@v1.8.10
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.pypi_password }}
