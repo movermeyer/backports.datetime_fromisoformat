@@ -30,3 +30,7 @@ Documentation = "https://github.com/movermeyer/backports.datetime_fromisoformat"
 Repository = "https://github.com/movermeyer/backports.datetime_fromisoformat"
 "Bug Tracker" = "https://github.com/movermeyer/backports.datetime_fromisoformat/issues"
 Changelog = "https://github.com/movermeyer/backports.datetime_fromisoformat/CHANGELOG.md"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

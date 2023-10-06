@@ -155,8 +155,11 @@ jobs:
       - name: Replace version in pyproject.toml (developmental releases)
         run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
 
+      - name: Get build tool
+        run: pip install --upgrade build
+
       - name: Build sdist
-        run: python setup.py sdist
+        run: python -m build
 
       - uses: actions/upload-artifact@v3
         with:
