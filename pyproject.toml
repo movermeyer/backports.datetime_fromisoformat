@@ -1,6 +1,6 @@
 [project]
 name = "backports-datetime-fromisoformat"
-version = "2.0.0"
+version = "2.0.1b1"
 authors = [
   { name="Michael Overmeyer", email="backports@movermeyer.com" },
 ]
