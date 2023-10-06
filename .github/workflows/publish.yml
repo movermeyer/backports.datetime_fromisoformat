@@ -102,7 +102,39 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        # with: # TODO: Releases aren't necessarily on the default branch
+        #   ref: ${{ env.release_tag }}
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: release_values
+
+      - name: Load normalized release values
+        if: ${{ !startsWith(matrix.os, 'windows') }}
+        run: |
+          cat release_values.txt | xargs -I{} bash -c 'echo {} >> $GITHUB_ENV'
+
+      - name: Replace version in pyproject.toml (developmental releases)
+        run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.2
+        env:
+          CIBW_SKIP: "pp*-macosx* *-win32 *-manylinux_i686"
+          CIBW_ARCHS_MACOS: x86_64 arm64 universal2
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
+  build_wheels_windows:
+    name: Build wheel on windows-latest
+    needs: [pre_build_sanity_check]
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -115,7 +147,7 @@ jobs:
 
       - name: Load normalized release values
         run: |
-          cat release_values.txt | xargs -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
+          for /F "tokens=*" %%A in (release_values.txt) do echo %%A >> $env:GITHUB_ENV
 
       - name: Replace version in pyproject.toml (developmental releases)
         run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
@@ -166,7 +198,7 @@ jobs:
           path: dist/*.tar.gz
 
   # publish_to_test_pypi:
-  #   needs: [pre_build_sanity_check, build_wheels, build_sdist]
+  #   needs: [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist]
   #   runs-on: ubuntu-latest
 
   #   steps:
@@ -238,7 +270,7 @@ jobs:
 
 
   # publish:
-  #   needs: [pre_build_sanity_check, build_wheels, build_sdist, publish_to_test_pypi, pre_publish_sanity_check]
+  #   needs: [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist, publish_to_test_pypi, pre_publish_sanity_check]
   #   runs-on: ubuntu-latest
 
   #   steps:
