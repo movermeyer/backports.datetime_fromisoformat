@@ -62,14 +62,14 @@ jobs:
         run: |
           [[ ${{ env.version_from_release_tag }} == ${{ env.backports_version }} ]]
 
-      - name: Get the latest release for this version from Test PyPI
+      - name: Get the latest developmental release for this version from Test PyPI
         run: |
-          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents=sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_from_release_tag }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; existing_pypi_version = max([x for x in existing_releases if x.release == new_release_number.release], default=version.parse("0.0.0")); print(f"test_pypi_version={existing_pypi_version}")' >> $GITHUB_ENV
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents=sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_from_release_tag }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; existing_developmental_release_version = max([x for x in existing_releases if x.release == new_release_number.release and x.is_devrelease], default=version.parse("0.0.0")); print(f"test_pypi_developmental_version={existing_developmental_release_version}")' >> $GITHUB_ENV
 
       - name: Generate the developmental release version
         # If there is a developmental release in Test PyPI for the version in pyproject.toml, increment the number. Else 1. Save in $GITHUB_ENV
         run: |
-          python -c 'from packaging import version; new = version.parse("${{ env.version_from_release_tag }}"); existing = version.parse("${{ env.test_pypi_version }}"); dev_number = existing.dev + 1 if existing.is_devrelease and new.release == existing.release else 1; epoch = f"{new.epoch}!" if new.epoch else ""; release = ".".join([str(x) for x in new.release]); pre = f"{new.pre[0]}{new.pre[1]}" if new.pre else ""; post = f".post{new.post}" if new.post else ""; dev = f".dev{dev_number}"; developmental_release_version=f"{epoch}{release}{pre}{post}{dev}"; print(f"developmental_release_version={developmental_release_version}")' >> $GITHUB_ENV
+          python -c 'from packaging import version; new = version.parse("${{ env.version_from_release_tag }}"); existing = version.parse("${{ env.test_pypi_developmental_version }}"); dev_number = existing.dev + 1 if existing.is_devrelease and new.release == existing.release else 1; epoch = f"{new.epoch}!" if new.epoch else ""; release = ".".join([str(x) for x in new.release]); pre = f"{new.pre[0]}{new.pre[1]}" if new.pre else ""; post = f".post{new.post}" if new.post else ""; dev = f".dev{dev_number}"; developmental_release_version=f"{epoch}{release}{pre}{post}{dev}"; print(f"developmental_release_version={developmental_release_version}")' >> $GITHUB_ENV
 
       - name: Determine which version to use
         run: echo "version_to_use=`if [ '${{ github.event_name }}' == 'workflow_dispatch' ]; then echo '${{ env.developmental_release_version }}'; else echo '${{ env.version_from_release_tag }}'; fi`" >> $GITHUB_ENV
@@ -77,10 +77,10 @@ jobs:
       - name: Log all the things
         run: |
           echo 'Ref                                                   `${{ env.event_ref }}`'
-          echo 'release event's tag                                   `${{ env.release_tag }}`'
-          echo 'release event's version                               `${{ env.version_from_release_tag }}`'
+          echo 'release event tag                                     `${{ env.release_tag }}`'
+          echo 'release event version                                 `${{ env.version_from_release_tag }}`'
           echo 'Version in pyproject.toml                             `${{ env.backports_version }}`'
-          echo 'Version in Test PyPI                                  `${{ env.test_pypi_version }}`'
+          echo 'Developmental release version in Test PyPI            `${{ env.test_pypi_developmental_version }}`'
           echo 'New developmental version                             `${{ env.developmental_release_version }}`'
           echo 'Version to use                                        `${{ env.version_to_use }}`'
 
