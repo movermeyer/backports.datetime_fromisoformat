@@ -159,7 +159,10 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          path: ./wheelhouse/*.whl
+          name: dist
+          path: |
+            ./wheelhouse/*.whl
+            !./wheelhouse/UNKNOWN*.whl
 
   build_sdist:
     name: Build source distribution
@@ -194,29 +197,41 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
+          name: dist
           path: dist/*.tar.gz
 
-  # publish_to_test_pypi:
-  #   needs: [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist]
-  #   runs-on: ubuntu-latest
+  publish_to_test_pypi:
+    needs: [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist]
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     # with: # TODO: Releases aren't necessarily on the default branch
-  #     #   ref: ${{ env.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      # with: # TODO: Releases aren't necessarily on the default branch
+      #   ref: ${{ env.release_tag }}
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: 3.12
+      - uses: actions/download-artifact@v3
+        id: download
+        with:
+          name: dist
+          path: dist/
 
-  #     - name: Publish package to TestPyPI
-  #       uses: pypa/gh-action-pypi-publish@v1.8.10
-  #       with:
-  #         # TODO: Change to use "Trusted publishing"?
-  #         user: __token__
-  #         password: ${{ secrets.test_pypi_password }}
-  #         repository_url: https://test.pypi.org/legacy/
+      - name: Echo download path
+        run: echo ${{steps.download.outputs.download-path}}
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Load normalized release values
+        run: |
+          cat release_values.txt | xargs -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
+
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@v1.8.10
+        with:
+          # TODO: Change to use "Trusted publishing"?
+          user: __token__
+          password: ${{ secrets.test_pypi_password }}
+          repository_url: https://test.pypi.org/legacy/
 
   pre_publish_sanity_check:
     if: github.event_name == 'release'
