@@ -91,7 +91,7 @@ jobs:
 
       - name: Serialize normalized release values
         run: |
-          echo -e "event_ref=${{ env.event_ref }}\nversion_from_release_tag=${{version_from_release_tag}}\nversion_to_use=${{ env.version_to_use }}" > release_values.txt
+          echo -e "event_ref=${{ env.event_ref }}\nversion_from_release_tag=${{env.version_from_release_tag}}\nversion_to_use=${{ env.version_to_use }}" > release_values.txt
 
       - name: Share normalized release values
         uses: actions/upload-artifact@v3
@@ -262,11 +262,6 @@ jobs:
         with:
           ref: ${{ env.event_ref }}
 
-      - name: Verify that the `version_from_release_tag` is present in the CHANGELOG
-        # TODO: Use something like `changelog-cli` to extract the correct version number
-        run: |
-          grep ${{ env.version_from_release_tag }} CHANGELOG.md
-
       - name: Get the latest developmental release for this version from Test PyPI
         run: |
           curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents = sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_from_release_tag }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; developmental_release_version = max([x for x in existing_releases if if x.release == new_release_number.release and x.is_devrelease], default=version.parse("0.0.0")); test_pypi_release_exists = new_release_number in existing_releases; print(f"test_pypi_developmental_release_version={developmental_release_version}\ntest_pypi_release_exists={test_pypi_release_exists}"); ' >> $GITHUB_ENV
@@ -293,6 +288,11 @@ jobs:
       - name: Verify that the release has been uploaded to Test PyPI
         run: |
           [[ ${{ env.test_pypi_release_exists }} == True ]]
+
+      - name: Verify that the `version_from_release_tag` is present in the CHANGELOG
+        # TODO: Use something like `changelog-cli` to extract the correct version number
+        run: |
+          grep ${{ env.version_from_release_tag }} CHANGELOG.md
 
       - name: Verify that the `version_from_release_tag` is larger/newer than the existing release in PyPI
         # Note: This precludes making releases that are for old versions
