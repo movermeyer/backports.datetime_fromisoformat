@@ -23,6 +23,10 @@ jobs:
       - run: |
           pip install packaging
 
+      - name: Capture the ref
+        run: |
+          echo "event_ref=`echo '${{ github.event.release.tag_name }}${{ github.event.ref }}'`" >> $GITHUB_ENV
+
       - name: Capture the release tag
         run: |
           echo "release_tag=`echo '${{ github.event.release.tag_name }}${{ github.event.inputs.requested_release_tag }}'`" >> $GITHUB_ENV
@@ -33,6 +37,7 @@ jobs:
 
       - name: Log all the things
         run: |
+          echo 'Ref                      `${{ env.event_ref }}`'
           echo 'release event's tag      `${{ env.release_tag }}`'
           echo 'release event's version  `${{ env.version_from_release_tag }}`'
 
@@ -42,8 +47,8 @@ jobs:
           echo "${{ env.release_tag }}" | sed '/^v\([1-9][0-9]*!\)\?\(0\|[1-9][0-9]*\)\(\.\(0\|[1-9][0-9]*\)\)*\(\(a\|b\|rc\)\(0\|[1-9][0-9]*\)\)\?\(\.post\(0\|[1-9][0-9]*\)\)\?\(\.dev\(0\|[1-9][0-9]*\)\)\?$/!{q1}'
 
       - uses: actions/checkout@v4
-        # with: # TODO: Releases aren't necessarily on the default branch
-        #   ref: ${{ env.release_tag }}
+        with:
+          ref: ${{ env.event_ref }}
 
       - name: Get the version from pyproject.toml
         run: |
@@ -58,12 +63,10 @@ jobs:
           [[ ${{ env.version_from_release_tag }} == ${{ env.backports_version }} ]]
 
       - name: Get the latest release for this version from Test PyPI
-        if: github.event_name == 'workflow_dispatch'
         run: |
           curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents=sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_from_release_tag }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; existing_pypi_version = max([x for x in existing_releases if x.release == new_release_number.release], default=version.parse("0.0.0")); print(f"test_pypi_version={existing_pypi_version}")' >> $GITHUB_ENV
 
       - name: Generate the developmental release version
-        if: github.event_name == 'workflow_dispatch'
         # If there is a developmental release in Test PyPI for the version in pyproject.toml, increment the number. Else 1. Save in $GITHUB_ENV
         run: |
           python -c 'from packaging import version; new = version.parse("${{ env.version_from_release_tag }}"); existing = version.parse("${{ env.test_pypi_version }}"); dev_number = existing.dev + 1 if existing.is_devrelease and new.release == existing.release else 1; epoch = f"{new.epoch}!" if new.epoch else ""; release = ".".join([str(x) for x in new.release]); pre = f"{new.pre[0]}{new.pre[1]}" if new.pre else ""; post = f".post{new.post}" if new.post else ""; dev = f".dev{dev_number}"; developmental_release_version=f"{epoch}{release}{pre}{post}{dev}"; print(f"developmental_release_version={developmental_release_version}")' >> $GITHUB_ENV
@@ -73,6 +76,7 @@ jobs:
 
       - name: Log all the things
         run: |
+          echo 'Ref                                                   `${{ env.event_ref }}`'
           echo 'release event's tag                                   `${{ env.release_tag }}`'
           echo 'release event's version                               `${{ env.version_from_release_tag }}`'
           echo 'Version in pyproject.toml                             `${{ env.backports_version }}`'
@@ -87,7 +91,7 @@ jobs:
 
       - name: Serialize normalized release values
         run: |
-          echo -e "version_to_use=${{ env.version_to_use }}" > release_values.txt
+          echo -e "event_ref=${{ env.event_ref }}\nversion_from_release_tag=${{version_from_release_tag}}\nversion_to_use=${{ env.version_to_use }}" > release_values.txt
 
       - name: Share normalized release values
         uses: actions/upload-artifact@v3
@@ -104,20 +108,20 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
-        # with: # TODO: Releases aren't necessarily on the default branch
-        #   ref: ${{ env.release_tag }}
-
       - uses: actions/download-artifact@v3
         with:
           name: release_values
 
       - name: Load normalized release values
-        if: ${{ !startsWith(matrix.os, 'windows') }}
         run: |
           cat release_values.txt | xargs -I{} bash -c 'echo {} >> $GITHUB_ENV'
 
-      - name: Replace version in pyproject.toml (developmental releases)
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.event_ref }}
+
+      - name: Replace version in pyproject.toml
+        # Required for developmental releases
         run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
 
       - name: Build wheels
@@ -140,10 +144,6 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
-        # with: # TODO: Releases aren't necessarily on the default branch
-        #   ref: ${{ env.release_tag }}
-
       - uses: actions/download-artifact@v3
         with:
           name: release_values
@@ -151,7 +151,12 @@ jobs:
       - name: Load normalized release values
         run: foreach($line in [System.IO.File]::ReadLines("release_values.txt")){ echo $line >> $env:GITHUB_ENV }
 
-      - name: Replace version in pyproject.toml (developmental releases)
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ $env:event_ref }}
+
+      - name: Replace version in pyproject.toml
+        # Required for developmental releases
         run: (Get-Content -path "pyproject.toml") | % { $_ -Replace '^version = ".*?"$', "version = `"$env:version_to_use`"" } |  Out-File "pyproject.toml"
 
       - name: Build wheels
@@ -178,10 +183,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - uses: actions/checkout@v4
-        # with: # TODO: Releases aren't necessarily on the default branch
-        #   ref: ${{ env.release_tag }}
-
       - uses: actions/download-artifact@v3
         with:
           name: release_values
@@ -190,7 +191,12 @@ jobs:
         run: |
           cat release_values.txt | xargs -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
 
-      - name: Replace version in pyproject.toml (developmental releases)
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.event_ref }}
+
+      - name: Replace version in pyproject.toml
+        # Required for developmental releases
         run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
 
       - name: Get build tool
@@ -209,25 +215,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: release_values
+
+      - name: Load normalized release values
+        run: |
+          cat release_values.txt | xargs -I{} bash -c 'echo {} >> $GITHUB_ENV'
+
       - uses: actions/checkout@v4
-      # with: # TODO: Releases aren't necessarily on the default branch
-      #   ref: ${{ env.release_tag }}
+        with:
+          ref: ${{ env.event_ref }}
 
       - uses: actions/download-artifact@v3
         id: download
         with:
           name: dist
           path: dist/
-
-      - name: Echo download path
-        run: echo ${{steps.download.outputs.download-path}}
-
-      - name: Display structure of downloaded files
-        run: ls -R
-
-      - name: Load normalized release values
-        run: |
-          cat release_values.txt | xargs -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
 
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@v1.8.10
@@ -238,8 +242,7 @@ jobs:
           repository_url: https://test.pypi.org/legacy/
 
   pre_publish_sanity_check:
-    if: github.event_name == 'release'
-    needs: [pre_build_sanity_check]
+    needs: [publish_to_test_pypi]
     runs-on: ubuntu-latest
 
     steps:
@@ -251,10 +254,22 @@ jobs:
         run: |
           cat release_values.txt | xargs -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
 
-      - name: Get the latest release for this version from Test PyPI
-        if: github.event_name == 'workflow_dispatch'
+      - name: Verify that the `version_from_release_tag` is not a "developmental release"
         run: |
-          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents=sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_to_use }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; existing_pypi_version = max([x for x in existing_releases if x.release == new_release_number.release], default=version.parse("0.0.0")); print(f"test_pypi_version={existing_pypi_version}")' >> $GITHUB_ENV
+          python -c 'import sys; from packaging import version; code = 1 if version.parse("${{ env.version_from_release_tag }}").is_devrelease else 0; sys.exit(code)'
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.event_ref }}
+
+      - name: Verify that the `version_from_release_tag` is present in the CHANGELOG
+        # TODO: Use something like `changelog-cli` to extract the correct version number
+        run: |
+          grep ${{ env.version_from_release_tag }} CHANGELOG.md
+
+      - name: Get the latest developmental release for this version from Test PyPI
+        run: |
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents = sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_from_release_tag }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; developmental_release_version = max([x for x in existing_releases if if x.release == new_release_number.release and x.is_devrelease], default=version.parse("0.0.0")); test_pypi_release_exists = new_release_number in existing_releases; print(f"test_pypi_developmental_release_version={developmental_release_version}\ntest_pypi_release_exists={test_pypi_release_exists}"); ' >> $GITHUB_ENV
 
       - name: Get the latest version from PyPI
         run: |
@@ -262,7 +277,10 @@ jobs:
 
       - name: Log all the things
         run: |
-          echo 'Version in Test PyPI  `${{ env.test_pypi_version }}`'
+          echo 'Ref: `${{ env.event_ref }}`'
+          echo 'Version to use: `${{ env.version_to_use }}`'
+          echo 'Developmental release version in Test PyPI  `${{ env.test_pypi_developmental_release_version }}`'
+          echo 'Version exists in Test PyPI?  `${{ env.test_pypi_release_exists }}`'
           echo 'Version in PyPI       `${{ env.pypi_version }}`'
 
       - name: Verify that there exists a developmental release for this version in Test PyPI
@@ -270,48 +288,44 @@ jobs:
         # Meant to make sure that we aren't somehow skipping the "developmental release" phase of the release
         # (e.g., Publishing the GitHub release without first saving the draft)
         run: |
-          python -c 'import sys; from packaging import version; code = 0 if version.parse("${{ env.test_pypi_version }}").is_devrelease else 1; sys.exit(code)'
+          [[ ${{ env.test_pypi_developmental_release_version }} != 0.0.0 ]]
 
-      - name: Verify that the `version_to_use` is not a "developmental release"
-        # https://peps.python.org/pep-0440
+      - name: Verify that the release has been uploaded to Test PyPI
         run: |
-          python -c 'import sys; from packaging import version; code = 1 if version.parse("${{ env.version_to_use }}").is_devrelease else 0; sys.exit(code)'
+          [[ ${{ env.test_pypi_release_exists }} == True ]]
 
-      - name: Verify that the `version_to_use` is larger/newer than the existing release in PyPI
+      - name: Verify that the `version_from_release_tag` is larger/newer than the existing release in PyPI
+        # Note: This precludes making releases that are for old versions
         run: |
-          python -c 'import sys; from packaging import version; code = 0 if version.parse("${{ env.pypi_version }}") < version.parse("${{ env.version_to_use }}") else 1; sys.exit(code)'
+          python -c 'import sys; from packaging import version; code = 0 if version.parse("${{ env.pypi_version }}") < version.parse("${{ env.version_from_release_tag }}") else 1; sys.exit(code)'
 
-      - name: Verify that the `version_to_use` is present in the CHANGELOG
-        # TODO: Use something like `changelog-cli` to extract the correct version number
+  publish:
+    if: github.event_name == 'release'
+    needs: [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist, publish_to_test_pypi, pre_publish_sanity_check]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: release_values
+
+      - name: Load normalized release values
         run: |
-          grep ${{ env.version_to_use }} CHANGELOG.md
+          cat release_values.txt | xargs -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
 
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.event_ref }}
 
-  # publish:
-  #   needs: [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist, publish_to_test_pypi, pre_publish_sanity_check]
-  #   runs-on: ubuntu-latest
+      - uses: actions/download-artifact@v3
+        id: download
+        with:
+          name: dist
+          path: dist/
 
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: 3.12
-
-  #     - uses: actions/download-artifact@v3
-  #       with:
-  #         name: my-artifact
-
-  #     - name: Publish package to TestPyPI
-  #       uses: pypa/gh-action-pypi-publish@v1.8.10
-  #       with:
-  #         user: __token__
-  #         password: ${{ secrets.test_pypi_password }}
-  #         repository_url: https://test.pypi.org/legacy/
-
-  #     - name: Publish package to PyPI
-  #       uses: pypa/gh-action-pypi-publish@v1.8.10
-  #       with:
-  #         user: __token__
-  #         password: ${{ secrets.pypi_password }}
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.8.10
+        with:
+          # TODO: Change to use "Trusted publishing"?
+          user: __token__
+          password: ${{ secrets.pypi_password }}
