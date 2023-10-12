@@ -239,7 +239,7 @@ jobs:
           # TODO: Change to use "Trusted publishing"?
           user: __token__
           password: ${{ secrets.test_pypi_password }}
-          repository_url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/legacy/
 
   pre_publish_sanity_check:
     needs: [publish_to_test_pypi]
