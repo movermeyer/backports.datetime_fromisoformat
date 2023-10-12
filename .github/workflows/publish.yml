@@ -129,7 +129,9 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: dist
-          path: ./wheelhouse/*.whl
+          path: |
+            ./wheelhouse/*.whl
+            !./wheelhouse/UNKNOWN*.whl
 
   build_wheels_windows:
     name: Build wheel on windows-latest
