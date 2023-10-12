@@ -122,7 +122,8 @@ jobs:
 
       - name: Replace version in pyproject.toml
         # Required for developmental releases
-        run: sed -i -e 's/^version = ".*\?"$/version = "${{ env.version_to_use }}"/g' pyproject.toml
+        run: |
+          awk '{sub(/^version = ".*?"$/,"version = \"${{ env.version_to_use }}\""); print}' pyproject.toml > temp && mv temp pyproject.toml
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.2
