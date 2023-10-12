@@ -153,7 +153,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ $env:event_ref }}
+          ref: $env:event_ref
 
       - name: Replace version in pyproject.toml
         # Required for developmental releases
