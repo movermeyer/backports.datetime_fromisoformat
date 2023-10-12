@@ -57,11 +57,10 @@ jobs:
         run: |
           [[ ${{ env.version_from_release_tag }} == ${{ env.backports_version }} ]]
 
-      - name: Get the latest version from Test PyPI
-        # TODO: New releases aren't necessarily for the latest code. Change this to get the most recent developmental version for a release instead
+      - name: Get the latest release for this version from Test PyPI
         if: github.event_name == 'workflow_dispatch'
         run: |
-          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; contents=sys.stdin.read(); parsed = json.loads(contents); print("test_pypi_version=" + parsed["info"]["version"])' >> $GITHUB_ENV
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents=sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_from_release_tag }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; existing_pypi_version = max([x for x in existing_releases if x.base_version == new_release_number.base_version], default=version.parse("0.0.0")); print(f"test_pypi_version={existing_pypi_version}")' >> $GITHUB_ENV
 
       - name: Generate the developmental release version
         if: github.event_name == 'workflow_dispatch'
@@ -129,6 +128,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
+          name: dist
           path: ./wheelhouse/*.whl
 
   build_wheels_windows:
@@ -247,10 +247,10 @@ jobs:
         run: |
           cat release_values.txt | xargs -l -I{} bash -c 'echo {} >> $GITHUB_ENV'
 
-      - name: Get the latest version from Test PyPI
-        # TODO: New releases aren't necessarily for the latest code. Change this to get the most recent developmental version for a release instead
+      - name: Get the latest release for this version from Test PyPI
+        if: github.event_name == 'workflow_dispatch'
         run: |
-          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; contents=sys.stdin.read(); parsed = json.loads(contents); print("test_pypi_version=" + parsed["info"]["version"])' >> $GITHUB_ENV
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents=sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_to_use }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; existing_pypi_version = max([x for x in existing_releases if x.base_version == new_release_number.base_version], default=version.parse("0.0.0")); print(f"test_pypi_version={existing_pypi_version}")' >> $GITHUB_ENV
 
       - name: Get the latest version from PyPI
         run: |
