@@ -20,10 +20,12 @@ def non_developmental_version(version: Version):
     post = f".post{version.post}" if version.post else ""
     return parse(f"{epoch}{release}{pre}{post}")
 
+def existing_developmental_release_version(new: Version, existing_releases: Iterator[Version]) -> Version:
+    return max([x for x in existing_releases if x.is_devrelease and non_developmental_version(x) == new], default=None)
 
 def new_developmental_release_version(new: Version, existing_releases: Iterator[Version]) -> Version:
-    existing = max([x for x in existing_releases if x.is_devrelease and non_developmental_version(x) == new], default=parse("0.0.0"))
-    dev_number = existing.dev + 1 if existing.is_devrelease and new.release == existing.release else 1
+    existing = existing_developmental_release_version(new, existing_releases)
+    dev_number = existing.dev + 1 if existing is not None else 1
 
     epoch = f"{new.epoch}!" if new.epoch else ""
     release = ".".join([str(x) for x in new.release])
@@ -31,7 +33,6 @@ def new_developmental_release_version(new: Version, existing_releases: Iterator[
     post = f".post{new.post}" if new.post else ""
     dev = f".dev{dev_number}"
     return parse(f"{epoch}{release}{pre}{post}{dev}")
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -43,5 +44,9 @@ if __name__ == '__main__':
 
     contents = sys.stdin.read()
     existing_releases = _releases(contents)
+
+    existing = existing_developmental_release_version(parse(args.new_version), existing_releases) or "0.0.0"
+    print(existing)
+
     dev_version = new_developmental_release_version(parse(args.new_version), existing_releases)
     print(dev_version)

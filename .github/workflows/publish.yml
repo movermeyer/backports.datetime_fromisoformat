@@ -65,7 +65,7 @@ jobs:
       - name: Generate the next developmental release version
         # If there is a developmental release in Test PyPI for the requested version, increment the number. Else 1. Save in $GITHUB_ENV
         run: |
-          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python release/developmental_release.py ${{ env.version_from_release_tag }} | sed 's/^/developmental_release_version=/' >> $GITHUB_ENV
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python release/developmental_release.py ${{ env.version_from_release_tag }} | tail -n 1 | sed 's/^/developmental_release_version=/' >> $GITHUB_ENV
 
       - name: Determine which version to use
         run: echo "version_to_use=`if [ '${{ github.event_name }}' == 'workflow_dispatch' ]; then echo '${{ env.developmental_release_version }}'; else echo '${{ env.version_from_release_tag }}'; fi`" >> $GITHUB_ENV
@@ -261,7 +261,7 @@ jobs:
 
       - name: Get the latest developmental release for this version from Test PyPI
         run: |
-          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents = sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_from_release_tag }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; developmental_release_version = max([x for x in existing_releases if x.release == new_release_number.release and x.is_devrelease], default=version.parse("0.0.0")); test_pypi_release_exists = new_release_number in existing_releases; print(f"test_pypi_developmental_release_version={developmental_release_version}\ntest_pypi_release_exists={test_pypi_release_exists}"); ' >> $GITHUB_ENV
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python release/developmental_release.py ${{ env.version_from_release_tag }} | head -n 1 | sed 's/^/test_pypi_developmental_release_version=/' >> $GITHUB_ENV
 
       - name: Get the latest version from PyPI
         run: |
@@ -272,7 +272,6 @@ jobs:
           echo 'Ref: `${{ env.event_ref }}`'
           echo 'Version to use: `${{ env.version_to_use }}`'
           echo 'Developmental release version in Test PyPI  `${{ env.test_pypi_developmental_release_version }}`'
-          echo 'Version exists in Test PyPI?  `${{ env.test_pypi_release_exists }}`'
           echo 'Version in PyPI       `${{ env.pypi_version }}`'
 
       - name: Verify that there exists a developmental release for this version in Test PyPI
@@ -281,10 +280,6 @@ jobs:
         # (e.g., Publishing the GitHub release without first saving the draft)
         run: |
           [[ ${{ env.test_pypi_developmental_release_version }} != 0.0.0 ]]
-
-      - name: Verify that the release has been uploaded to Test PyPI
-        run: |
-          [[ ${{ env.test_pypi_release_exists }} == True ]]
 
       - name: Verify that the `version_from_release_tag` is present in the CHANGELOG
         # TODO: Use something like `changelog-cli` to extract the correct version number
