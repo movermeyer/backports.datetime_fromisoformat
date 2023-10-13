@@ -59,4 +59,5 @@ Once you have sucessfully uploaded and tested a developmental release, it's time
 
 ## What if something went wrong with the final release?
 
-TODO.
+1. Debug and correct the problem.
+2. Publish a new release with an incremented version number

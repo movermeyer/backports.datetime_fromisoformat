@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       requested_release_tag:
-        description: 'The tag to use for this developmental release (without `.dev` suffix) (e.g., `v2.0.1`)'
+        description: "The tag to use for this developmental release (without `.dev` suffix) (e.g., `v2.0.1`)"
         required: true
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - run: |
           pip install packaging
@@ -62,14 +62,10 @@ jobs:
         run: |
           [[ ${{ env.version_from_release_tag }} == ${{ env.backports_version }} ]]
 
-      - name: Get the latest developmental release for this version from Test PyPI
+      - name: Generate the next developmental release version
+        # If there is a developmental release in Test PyPI for the requested version, increment the number. Else 1. Save in $GITHUB_ENV
         run: |
-          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python -c 'import json, sys; from packaging import version; contents=sys.stdin.read(); parsed = json.loads(contents); new_release_number = version.parse("${{ env.version_from_release_tag }}"); existing_releases = [version.parse(x) for x in parsed["releases"].keys()]; existing_developmental_release_version = max([x for x in existing_releases if x.release == new_release_number.release and x.is_devrelease], default=version.parse("0.0.0")); print(f"test_pypi_developmental_version={existing_developmental_release_version}")' >> $GITHUB_ENV
-
-      - name: Generate the developmental release version
-        # If there is a developmental release in Test PyPI for the version in pyproject.toml, increment the number. Else 1. Save in $GITHUB_ENV
-        run: |
-          python -c 'from packaging import version; new = version.parse("${{ env.version_from_release_tag }}"); existing = version.parse("${{ env.test_pypi_developmental_version }}"); dev_number = existing.dev + 1 if existing.is_devrelease and new.release == existing.release else 1; epoch = f"{new.epoch}!" if new.epoch else ""; release = ".".join([str(x) for x in new.release]); pre = f"{new.pre[0]}{new.pre[1]}" if new.pre else ""; post = f".post{new.post}" if new.post else ""; dev = f".dev{dev_number}"; developmental_release_version=f"{epoch}{release}{pre}{post}{dev}"; print(f"developmental_release_version={developmental_release_version}")' >> $GITHUB_ENV
+          curl https://test.pypi.org/pypi/backports-datetime-fromisoformat/json | python release/developmental_release.py ${{ env.version_from_release_tag }} | sed 's/^/developmental_release_version=/' >> $GITHUB_ENV
 
       - name: Determine which version to use
         run: echo "version_to_use=`if [ '${{ github.event_name }}' == 'workflow_dispatch' ]; then echo '${{ env.developmental_release_version }}'; else echo '${{ env.version_from_release_tag }}'; fi`" >> $GITHUB_ENV
@@ -80,7 +76,6 @@ jobs:
           echo 'release event tag                                     `${{ env.release_tag }}`'
           echo 'release event version                                 `${{ env.version_from_release_tag }}`'
           echo 'Version in pyproject.toml                             `${{ env.backports_version }}`'
-          echo 'Developmental release version in Test PyPI            `${{ env.test_pypi_developmental_version }}`'
           echo 'New developmental version                             `${{ env.developmental_release_version }}`'
           echo 'Version to use                                        `${{ env.version_to_use }}`'
 
@@ -182,7 +177,7 @@ jobs:
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - uses: actions/download-artifact@v3
         with:
@@ -212,7 +207,8 @@ jobs:
           path: dist/*.tar.gz
 
   publish_to_test_pypi:
-    needs: [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist]
+    needs:
+      [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist]
     runs-on: ubuntu-latest
 
     steps:
@@ -302,7 +298,15 @@ jobs:
 
   publish:
     if: github.event_name == 'release'
-    needs: [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist, publish_to_test_pypi, pre_publish_sanity_check]
+    needs:
+      [
+        pre_build_sanity_check,
+        build_wheels,
+        build_wheels_windows,
+        build_sdist,
+        publish_to_test_pypi,
+        pre_publish_sanity_check,
+      ]
     runs-on: ubuntu-latest
 
     steps:

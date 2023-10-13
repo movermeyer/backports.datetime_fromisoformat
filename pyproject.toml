@@ -1,27 +1,25 @@
 [project]
 name = "backports-datetime-fromisoformat"
 version = "2.0.1"
-authors = [
-  { name="Michael Overmeyer", email="backports@movermeyer.com" },
-]
+authors = [{ name = "Michael Overmeyer", email = "backports@movermeyer.com" }]
 description = "Backport of Python 3.11's datetime.fromisoformat"
 readme = "README.rst"
 requires-python = ">3"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 classifiers = [
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: MIT License',
-    'Operating System :: OS Independent',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.4',
-    'Programming Language :: Python :: 3.5',
-    'Programming Language :: Python :: 3.6',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Topic :: Software Development :: Libraries :: Python Modules',
+  'Intended Audience :: Developers',
+  'License :: OSI Approved :: MIT License',
+  'Operating System :: OS Independent',
+  'Programming Language :: Python',
+  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.4',
+  'Programming Language :: Python :: 3.5',
+  'Programming Language :: Python :: 3.6',
+  'Programming Language :: Python :: 3.7',
+  'Programming Language :: Python :: 3.8',
+  'Programming Language :: Python :: 3.9',
+  'Programming Language :: Python :: 3.10',
+  'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 
 [project.urls]
@@ -34,3 +32,14 @@ Changelog = "https://github.com/movermeyer/backports.datetime_fromisoformat/CHAN
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 120
+disable = "C0114, C0115, C0116, C0301"
+
+[tool.autopep8]
+max_line_length = 120
+ignore = ["E501"]
+in-place = true
+recursive = true
+aggressive = 3
