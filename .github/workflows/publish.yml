@@ -211,6 +211,8 @@ jobs:
       [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist]
     runs-on: ubuntu-latest
     environment: test_pypi
+    permissions:
+      id-token: write  # Required for "trusted publishing"
 
     steps:
       - uses: actions/download-artifact@v3
@@ -234,9 +236,6 @@ jobs:
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@v1.8.10
         with:
-          # TODO: Change to use "Trusted publishing"?
-          user: __token__
-          password: ${{ secrets.test_pypi_password }}
           repository-url: https://test.pypi.org/legacy/
 
   pre_publish_sanity_check:
