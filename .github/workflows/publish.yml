@@ -54,14 +54,6 @@ jobs:
         run: |
           echo "backports_version=`grep -Po 'version = "\K[^"]*' pyproject.toml`" >> $GITHUB_ENV
 
-      - name: Log all the things
-        run: |
-          echo 'version in pyproject.toml `${{ env.backports_version }}`'
-
-      - name: Verify that the release version matches the version in pyproject.toml
-        run: |
-          [[ ${{ env.version_from_release_tag }} == ${{ env.backports_version }} ]]
-
       - name: Generate the next developmental release version
         # If there is a developmental release in Test PyPI for the requested version, increment the number. Else 1. Save in $GITHUB_ENV
         run: |
@@ -280,6 +272,14 @@ jobs:
         # (e.g., Publishing the GitHub release without first saving the draft)
         run: |
           [[ ${{ env.test_pypi_developmental_release_version }} != 0.0.0 ]]
+
+      - name: Get the version from pyproject.toml
+        run: |
+          echo "backports_version=`grep -Po 'version = "\K[^"]*' pyproject.toml`" >> $GITHUB_ENV
+
+      - name: Verify that the release version matches the version in pyproject.toml
+        run: |
+          [[ ${{ env.version_from_release_tag }} == ${{ env.backports_version }} ]]
 
       - name: Verify that the `version_from_release_tag` is present in the CHANGELOG
         # TODO: Use something like `changelog-cli` to extract the correct version number
