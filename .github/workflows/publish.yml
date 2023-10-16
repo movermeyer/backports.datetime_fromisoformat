@@ -210,6 +210,7 @@ jobs:
     needs:
       [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist]
     runs-on: ubuntu-latest
+    environment: test_pypi
 
     steps:
       - uses: actions/download-artifact@v3
@@ -303,6 +304,7 @@ jobs:
         pre_publish_sanity_check,
       ]
     runs-on: ubuntu-latest
+    environment: production_pypi
 
     steps:
       - uses: actions/download-artifact@v3
