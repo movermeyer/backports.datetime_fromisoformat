@@ -95,7 +95,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: release_values
 
@@ -132,7 +132,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: release_values
 
@@ -171,7 +171,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: release_values
 
@@ -207,7 +207,7 @@ jobs:
       id-token: write  # Required for "trusted publishing"
 
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: release_values
 
@@ -219,7 +219,7 @@ jobs:
         with:
           ref: ${{ env.event_ref }}
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         id: download
         with:
           name: dist
@@ -235,7 +235,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: release_values
 
@@ -308,7 +308,7 @@ jobs:
       id-token: write  # Required for "trusted publishing"
 
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: release_values
 
@@ -320,7 +320,7 @@ jobs:
         with:
           ref: ${{ env.event_ref }}
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         id: download
         with:
           name: dist
