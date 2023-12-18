@@ -81,7 +81,7 @@ jobs:
           echo -e "event_ref=${{ env.event_ref }}\nversion_from_release_tag=${{env.version_from_release_tag}}\nversion_to_use=${{ env.version_to_use }}" > release_values.txt
 
       - name: Share normalized release values
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release_values
           path: release_values.txt
@@ -119,7 +119,7 @@ jobs:
           CIBW_SKIP: "pp*-macosx* *-win32 *-manylinux_i686"
           CIBW_ARCHS_MACOS: x86_64 arm64 universal2
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: |
@@ -154,7 +154,7 @@ jobs:
           CIBW_SKIP: "pp*-macosx* pp*-win* *-win32 *-manylinux_i686"
           CIBW_ARCHS_MACOS: x86_64 arm64 universal2
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: |
@@ -193,7 +193,7 @@ jobs:
       - name: Build sdist
         run: python -m build
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/*.tar.gz
