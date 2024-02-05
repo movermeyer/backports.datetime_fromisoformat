@@ -113,7 +113,7 @@ jobs:
           awk '{sub(/^version = ".*?"$/,"version = \"${{ env.version_to_use }}\""); print}' pyproject.toml > temp && mv temp pyproject.toml
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.4
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BUILD: "cp37* cp38* cp39* cp310* pp37* pp38* pp39* pp310*"
           CIBW_SKIP: "pp*-macosx* *-win32 *-manylinux_i686"
@@ -148,7 +148,7 @@ jobs:
         run: (Get-Content -path "pyproject.toml") | % { $_ -Replace '^version = ".*?"$', "version = `"$env:version_to_use`"" } |  Out-File "pyproject.toml"
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.4
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BUILD: "cp37* cp38* cp39* cp310* pp37* pp38* pp39* pp310*"
           CIBW_SKIP: "pp*-macosx* pp*-win* *-win32 *-manylinux_i686"
