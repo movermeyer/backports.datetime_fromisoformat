@@ -33,6 +33,29 @@ Changelog = "https://github.com/movermeyer/backports.datetime_fromisoformat/CHAN
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
+[tool.cibuildwheel]
+build = [
+    "cp38-*",
+    "cp39-*",
+    "cp310-*",
+    "cp311-*",
+    "cp312-*",
+    "pp38-*",
+    "pp39-*",
+]
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64", "aarch64"]
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "universal2", "arm64"]
+environment = { MACOSX_DEPLOYMENT_TARGET="11.0" }
+skip = ["pp*"]
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+skip = ["pp*-win*", "*-win3"]
+
 [tool.pylint.'MESSAGES CONTROL']
 max-line-length = 120
 disable = "C0114, C0115, C0116, C0301"

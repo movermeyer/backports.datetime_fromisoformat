@@ -17,7 +17,7 @@ Make sure that there is a corresponding entry in `CHANGELOG.md`
 
 ## Create a developmental release
 
-The first step to *any* release is to excercise our build pipeline to make sure that our systems are still working as expected.
+The first step to *any* release is to exercise our build pipeline to make sure that our systems are still working as expected.
 (We release so infrequently, that there is often something that has broken due to "bit rot". You know how it is.)
 
 This is done with a ["developmental release"](https://peps.python.org/pep-0440) that executes the entire publishing process, including being uploaded to the [Test PyPI server](https://test.pypi.org/).
@@ -51,7 +51,7 @@ Only continue once you have a successful developmental release.
 
 ## Create a GitHub Release
 
-Once you have sucessfully uploaded and tested a developmental release, it's time for the real thing!
+Once you have successfully uploaded and tested a developmental release, it's time for the real thing!
 
 1. Create a new [GitHub release](https://github.com/movermeyer/backports.datetime_fromisoformat/releases/new)
 2. Click "Publish Release"
