@@ -3,6 +3,7 @@
 
 - [2.x.x](#2xx)
   - [Migration from 1.x.x](#migration-from-1xx)
+  - [Unreleased](#unreleased)
   - [Version 2.0.1](#version-201)
   - [Version 2.0.0](#version-200)
 - [1.x.x](#1xx)
@@ -19,6 +20,10 @@
 No migration is needed.
 
 However, starting in version 2, `backports.datetime_fromisoformat` will apply its changes to Python < 3.11, whereas v1 only applied changes to Python < 3.7. If you happened to be using `backports.datetime_fromisoformat` v1 on Python 3.7 through Python 3.10 and then upgrade to v2, it will patch the `fromisoformat` methods, whereas in v1 it did not. The `fromisoformat` methods will be able to parse timestamps from a wider portion of the ISO 8601 specification. This is unlikely to be a problem, but for completeness it is mentioned here.
+
+## Unreleased
+
+* Add support for aarch64 wheels
 
 ## Version 2.0.1
 
