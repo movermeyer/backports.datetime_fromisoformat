@@ -42,6 +42,7 @@ build = [
     "cp312-*",
     "pp38-*",
     "pp39-*",
+    "pp310-*",
 ]
 
 [tool.cibuildwheel.linux]

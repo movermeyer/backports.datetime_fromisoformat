@@ -4,9 +4,9 @@ name: Lint
 # events but only for the main branch
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   lint:
@@ -19,10 +19,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: "3.12"
 
       - name: Install lint tools
-        run: 'pip install Pygments restructuredtext-lint'
+        run: "pip install Pygments restructuredtext-lint"
 
       - name: Lint docs
         run: rst-lint --encoding=utf-8 README.rst

@@ -24,6 +24,7 @@ However, starting in version 2, `backports.datetime_fromisoformat` will apply it
 ## Unreleased
 
 * Add support for aarch64 wheels
+* Add builds for PyPy 3.10
 
 ## Version 2.0.1
 
