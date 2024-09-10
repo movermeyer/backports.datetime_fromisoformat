@@ -231,7 +231,9 @@ jobs:
           attestations: true
 
   pre_publish_sanity_check:
-    needs: [publish_to_test_pypi]
+    # needs: [publish_to_test_pypi]
+    needs:
+      [pre_build_sanity_check, build_wheels, build_wheels_windows, build_sdist]
     runs-on: ubuntu-latest
 
     steps:
@@ -293,13 +295,12 @@ jobs:
 
   publish:
     if: github.event_name == 'release'
-    needs:
-      [
+    needs: [
         pre_build_sanity_check,
         build_wheels,
         build_wheels_windows,
         build_sdist,
-        publish_to_test_pypi,
+        # publish_to_test_pypi,
         pre_publish_sanity_check,
       ]
     runs-on: ubuntu-latest
