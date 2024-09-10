@@ -114,7 +114,7 @@ jobs:
 
       - name: Set up QEMU # Needed to build aarch64 wheels, https://cibuildwheel.pypa.io/en/stable/faq/#emulation
         if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: all
 
