@@ -1,6 +1,6 @@
 [project]
 name = "backports-datetime-fromisoformat"
-version = "2.0.2"
+version = "2.0.3"
 authors = [{ name = "Michael Overmeyer", email = "backports@movermeyer.com" }]
 description = "Backport of Python 3.11's datetime.fromisoformat"
 readme = "README.rst"

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       requested_release_tag:
-        description: "The tag to use for this developmental release (without `.dev` suffix) (e.g., `v2.0.2`)"
+        description: "The tag to use for this developmental release (without `.dev` suffix) (e.g., `v2.0.3`)"
         required: true
 
 jobs:
