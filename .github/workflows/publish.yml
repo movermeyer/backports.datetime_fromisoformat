@@ -120,6 +120,8 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.22.0
+        env:
+          CIBW_ENABLE: pypy
 
       - uses: actions/upload-artifact@v4
         with:
@@ -151,6 +153,8 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.22.0
+        env:
+          CIBW_ENABLE: pypy
 
       - uses: actions/upload-artifact@v4
         with:
