@@ -3,6 +3,8 @@
  * 037e9125527d4a55af566f161c96a61b3c3fd998)
  * It was then refreshed using the Python 3.11 contents present at
  * 27d8dc2c9d3de886a884f79f0621d4586c0e0f7a
+ * Finally, the `_PyUnicode_Copy` implementation was copied from
+ * c8749b578324ad4089c8d014d9136bc42b065343
  *
  * Since then, I have:
  *   - torn out all the functionality that doesn't matter to
@@ -10,6 +12,7 @@
  *   - switched calls to datetime creation to use the versions found in
  *     `PyDateTimeAPI`
  *   - made minor changes to make it compilable for older versions of Python.
+ *     - Including in-lining a copy of _PyUnicode_Copy
  *
  * Below is a copy of the Python 3.11 code license
  * (from https://docs.python.org/3/license.html):
@@ -747,6 +750,29 @@ time_fromisoformat(PyObject *tstr)
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", tstr);
     return NULL;
+}
+
+PyObject *
+_PyUnicode_Copy(PyObject *unicode)
+{
+    Py_ssize_t length;
+    PyObject *copy;
+
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    length = PyUnicode_GET_LENGTH(unicode);
+    copy = PyUnicode_New(length, PyUnicode_MAX_CHAR_VALUE(unicode));
+    if (!copy)
+        return NULL;
+    assert(PyUnicode_KIND(copy) == PyUnicode_KIND(unicode));
+
+    memcpy(PyUnicode_DATA(copy), PyUnicode_DATA(unicode),
+           length * PyUnicode_KIND(unicode));
+    assert(_PyUnicode_CheckConsistency(copy, 1));
+    return copy;
 }
 
 static PyObject *
