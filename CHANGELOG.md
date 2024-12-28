@@ -4,6 +4,7 @@
 - [2.x.x](#2xx)
   - [Migration from 1.x.x](#migration-from-1xx)
   - [Unreleased](#unreleased)
+  - [Version 2.0.3](#version-203)
   - [Version 2.0.2](#version-202)
   - [Version 2.0.1](#version-201)
   - [Version 2.0.0](#version-200)
@@ -23,6 +24,10 @@ No migration is needed.
 However, starting in version 2, `backports.datetime_fromisoformat` will apply its changes to Python < 3.11, whereas v1 only applied changes to Python < 3.7. If you happened to be using `backports.datetime_fromisoformat` v1 on Python 3.7 through Python 3.10 and then upgrade to v2, it will patch the `fromisoformat` methods, whereas in v1 it did not. The `fromisoformat` methods will be able to parse timestamps from a wider portion of the ISO 8601 specification. This is unlikely to be a problem, but for completeness it is mentioned here.
 
 ## Unreleased
+
+* Nil
+
+## Version 2.0.3
 
 * Silenced errors when compiling against Python 3.13
   * Note: `backports.datetime_fromisoformat` does nothing when used against Python 3.11+. Use `backports-datetime-fromisoformat; python_version < '3.11'` in your dependency list to avoid even downloading it in modern Pythons
