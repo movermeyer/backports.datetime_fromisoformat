@@ -24,7 +24,8 @@ However, starting in version 2, `backports.datetime_fromisoformat` will apply it
 
 ## Unreleased
 
-* Nil.
+* Silenced errors when compiling against Python 3.13
+  * Note: `backports.datetime_fromisoformat` does nothing when used against Python 3.11+. Use `backports-datetime-fromisoformat; python_version < '3.11'` in your dependency list to avoid even downloading it in modern Pythons
 
 ## Version 2.0.2
 

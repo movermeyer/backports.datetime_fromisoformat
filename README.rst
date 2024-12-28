@@ -33,7 +33,7 @@ Quick Start
 
 .. code:: bash
 
-  pip install backports-datetime-fromisoformat
+  pip install "backports-datetime-fromisoformat; python_version < '3.11'"
 
 **Usage:**
 
