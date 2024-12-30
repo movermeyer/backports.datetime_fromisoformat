@@ -27,7 +27,7 @@ Homepage = "https://github.com/movermeyer/backports.datetime_fromisoformat"
 Documentation = "https://github.com/movermeyer/backports.datetime_fromisoformat"
 Repository = "https://github.com/movermeyer/backports.datetime_fromisoformat"
 "Bug Tracker" = "https://github.com/movermeyer/backports.datetime_fromisoformat/issues"
-Changelog = "https://github.com/movermeyer/backports.datetime_fromisoformat/CHANGELOG.md"
+Changelog = "https://github.com/movermeyer/backports.datetime_fromisoformat/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["setuptools"]
