@@ -11,15 +11,7 @@ class MonkeyPatch(object):
 
         def flush_mro_cache():
             # From https://stackoverflow.com/questions/24497316/set-a-read-only-attribute-in-python/24498525#24498525
-
-            if os.name == "nt":
-                pythonapi = c.PyDLL("python dll", None, sys.dllhandle)
-            elif sys.platform == "cygwin":
-                pythonapi = c.PyDLL("libpython%d.%d.dll" % sys.version_info[:2])
-            else:
-                pythonapi = c.PyDLL(None)
-
-            pythonapi.PyType_Modified(c.py_object(object))
+            c.pythonapi.PyType_Modified(c.py_object(object))
 
         _get_dict = c.pythonapi._PyObject_GetDictPtr
         _get_dict.restype = c.POINTER(c.py_object)
